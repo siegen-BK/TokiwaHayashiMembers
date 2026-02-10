@@ -1,1 +1,6 @@
-
+[
+  { "member_id":"m001", "event_date":"2025-11-03", "attendance":"出席" },
+  { "member_id":"m002", "event_date":"2025-11-03", "attendance":"出席" },
+  { "member_id":"m003", "event_date":"2025-11-03", "attendance":"遅刻" },
+  { "member_id":"m004", "event_date":"2025-11-03", "attendance":"欠席" }
+]
