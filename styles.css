@@ -1,1 +1,46 @@
+:root { --brand:#0a7cff; --ink:#222; --muted:#666; }
+* { box-sizing:border-box; }
+body{ font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial; color:var(--ink); margin:0; background:#fff; }
+.app-header{ position:sticky; top:0; background:#fff; border-bottom:1px solid #eee; z-index:10; }
+.brand{ display:flex; align-items:center; gap:12px; padding:8px 12px; }
+.logo{ width:36px; height:36px; }
+.year{ font-size:12px; color:var(--muted); }
+.title{ font-size:18px; margin:0; }
+.tabs{ display:flex; gap:8px; align-items:center; padding:8px 12px; overflow:auto; }
+.tab{ padding:6px 10px; border-radius:8px; text-decoration:none; color:#222; border:1px solid #ddd; }
+.tab:hover{ background:#f6f9ff; border-color:var(--brand); }
+.print, .settings{ margin-left:auto; padding:6px 10px; }
+main{ max-width:1100px; margin:10px auto 40px; padding:0 12px; }
 
+.card{ background:#fff; border:1px solid #eee; border-radius:10px; padding:12px; margin:10px 0; }
+.h1{ font-size:22px; margin:10px 0; }
+.h2{ font-size:18px; margin:8px 0; }
+
+.cover{ display:grid; gap:12px; }
+.cover img{ width:100%; border-radius:12px; }
+
+.day-toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.grid-roles{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px; }
+.role-box{ border:1px solid #eee; border-radius:8px; padding:8px; }
+.role-title{ font-weight:bold; margin-bottom:6px; }
+.role-list{ display:flex; flex-direction:column; gap:4px; font-size:14px; }
+
+.table{ width:100%; border-collapse:collapse; }
+.table th, .table td{ border-bottom:1px solid #eee; padding:8px; text-align:left;}
+.badge{ display:inline-block; padding:2px 8px; border-radius:12px; background:#eef5ff; color:#0a58ca; font-size:12px; }
+
+.modal{ position:fixed; inset:0; display:grid; place-items:center; background:#0006; }
+.modal.hidden{ display:none; }
+.modal-body{ max-width:560px; background:#fff; padding:16px; border-radius:12px; width:92%; }
+.modal input{ width:100%; padding:8px; margin-top:4px; }
+.note{ color:#666; font-size:12px; }
+
+@media print{
+  .app-header, .tabs, .print, .settings, #settingsModal{ display:none!important; }
+  body{ margin:0; }
+  main{ max-width:none; padding:0 18mm; }
+  .card{ break-inside:avoid; }
+  .page-break{ page-break-before:always; }
+  .cover img{ height:120mm; object-fit:cover; }
+}
+``
