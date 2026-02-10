@@ -1,1 +1,9 @@
-
+{
+  "parts": [
+    { "part":"大胴", "members":["岩井 涼哉"] },
+    { "part":"中胴", "members":["柏木 万里"] },
+    { "part":"側胴", "members":["遠藤 美羽"] },
+    { "part":"鉦",   "members":["鈴木 世里奈"] },
+    { "part":"笛",   "members":["川口 秋乃"] }
+  ]
+}
