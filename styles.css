@@ -160,19 +160,3 @@ main { padding:16px; max-width:960px; margin:0 auto; }
     top: 6px;
   }
 }
-
-右余白が足りない場合は、right: -44px を -36px や -52px に調整してください。
-
----
-
-2) app.js：rowTemplate() に削除ボタンを追加
-あなたの rowTemplate() の最後（</div> の直前）に ボタン1個を追加します。
-function rowTemplate(){
-  return `
-    <div class="row-group" role="rowgroup" aria-label="データ行">
-      <!-- …（既存のcellたち）… -->
-
-      <button class="row-del" type="button" title="この行を削除">🗑</button>
-    </div>
-  `;
-}
