@@ -18,7 +18,7 @@ function renderSection(id){
   h.style.cursor = 'pointer';
   h.addEventListener('click', ()=>{
     const current = localStorage.getItem(LS_KEY) || h.textContent;
-    const input = window.prompt('見出しタイトルを入力してください。', current);
+    const input = window.prompt('タイトルを入力してください。', current);
     if (input === null) return;
     const next = input.trim();
     if (!next) return;
