@@ -49,11 +49,11 @@ function renderSection(id){
     h.textContent = next;
   });
 
-  // 追加ボタン：行を 1 本追加
-  const rowsEl = document.getElementById('rows');
-  document.getElementById('btnAddInline')?.addEventListener('click', ()=>{
-    rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
-  });
+  -  // 追加ボタン：行を 1 本追加
+-  const rowsEl = document.getElementById('rows');
+-  document.getElementById('btnAddInline')?.addEventListener('click', ()=>{
+-    rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
+-  });
 }
 
 // 行 1 本（2 段グリッド）のテンプレート
@@ -86,6 +86,15 @@ function rowTemplate(){
 route('/cover', ()=>renderCover());
 route('/section', rest=>renderSection(rest));
 navigate();
+
+document.getElementById('view').addEventListener('click', (e)=>{
+  const btn = e.target.closest('#btnAddInline');
+  if (!btn) return;
+
+  const rowsEl = document.getElementById('rows');
+  if (!rowsEl) return;                 // セクション未描画時は無視
+  rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
+});
 
 // 印刷ボタン
 document.getElementById('btnPrint')?.addEventListener('click', ()=>window.print());
