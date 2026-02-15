@@ -1,8 +1,8 @@
 (() => {
   // =========================
-  // 設定（必要ならここだけ調整）
+  // 設定
   // =========================
-  const STORAGE_PREFIX = 'membersApp:'; // localStorageキーの接頭辞
+  const STORAGE_PREFIX = 'membersApp:'; // localStorageキー接頭辞
   const DEFAULT_SECTION = 'd1';
 
   const TITLE_BY_DAY = {
@@ -32,6 +32,10 @@
     return `${STORAGE_PREFIX}rows:${dayKey}`;
   }
 
+  function alignStorageKey(dayKey){
+    return `${STORAGE_PREFIX}align:${dayKey}`;
+  }
+
   function safeParseJSON(text, fallback) {
     try { return JSON.parse(text); } catch { return fallback; }
   }
@@ -40,8 +44,6 @@
   // テンプレート（行）
   // =========================
   function rowTemplate() {
-    // 区間・場所 / 鉦 / 笛 = 2段
-    // 大胴〜側胴 / 備考 = 2段ぶち抜き（span2）
     return `
       <div class="row-group" role="rowgroup" aria-label="データ行">
         <!-- 区間・場所（上下2段） -->
@@ -53,13 +55,13 @@
         <div class="cell span2" style="grid-column:3; grid-row:1 / span 2;" contenteditable="true" data-field="chudo"></div>
         <div class="cell span2" style="grid-column:4; grid-row:1 / span 2;" contenteditable="true" data-field="sokudo"></div>
 
-        <!-- 鉦（上下2段） -->
+        <!-- 鉦（上下2段）※下段だけ横線 -->
         <div class="cell" style="grid-column:5; grid-row:1;" contenteditable="true" data-field="kaneTop"></div>
-        <div class="cell" style="grid-column:5; grid-row:2;" contenteditable="true" data-field="kaneBottom"></div>
+        <div class="cell split-top" style="grid-column:5; grid-row:2;" contenteditable="true" data-field="kaneBottom"></div>
 
-        <!-- 笛（上下2段） -->
+        <!-- 笛（上下2段）※下段だけ横線 -->
         <div class="cell" style="grid-column:6; grid-row:1;" contenteditable="true" data-field="fueTop"></div>
-        <div class="cell" style="grid-column:6; grid-row:2;" contenteditable="true" data-field="fueBottom"></div>
+        <div class="cell split-top" style="grid-column:6; grid-row:2;" contenteditable="true" data-field="fueBottom"></div>
 
         <!-- 備考（2段ぶち抜き） -->
         <div class="cell span2" style="grid-column:7; grid-row:1 / span 2;" contenteditable="true" data-field="notes"></div>
@@ -86,8 +88,7 @@
   }
 
   function saveRows(dayKey) {
-    const data = serializeRows();
-    localStorage.setItem(rowsStorageKey(dayKey), JSON.stringify(data));
+    localStorage.setItem(rowsStorageKey(dayKey), JSON.stringify(serializeRows()));
   }
 
   function restoreRows(dayKey) {
@@ -111,11 +112,20 @@
     });
   }
 
-  // 入力保存（デバウンス）
-  let saveTimer = null;
-  function scheduleSave(dayKey) {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => saveRows(dayKey), 250);
+  // =========================
+  // 区間欄配置（左/中央/右）
+  // =========================
+  function applyAlign(dayKey){
+    const rowsEl = $('#rows');
+    const sel = $('#alignSelect');
+
+    if (!rowsEl) return;
+
+    const v = localStorage.getItem(alignStorageKey(dayKey)) || 'center';
+    rowsEl.classList.remove('align-left','align-center','align-right');
+    rowsEl.classList.add(`align-${v}`);
+
+    if (sel) sel.value = v;
   }
 
   // =========================
@@ -145,6 +155,15 @@
           <div class="cell" role="columnheader">備考</div>
         </div>
 
+        <div class="note" style="margin:6px 0 8px;">
+          区間欄の配置：
+          <select id="alignSelect">
+            <option value="left">左</option>
+            <option value="center">中央</option>
+            <option value="right">右</option>
+          </select>
+        </div>
+
         <div id="rows" class="rows"></div>
       </section>
     `;
@@ -168,6 +187,15 @@
 
     // 行を復元
     restoreRows(dayKey);
+
+    // 区間欄配置を適用（復元後に）
+    applyAlign(dayKey);
+
+    // セレクタ変更 → 保存＆適用
+    $('#alignSelect')?.addEventListener('change', (e)=>{
+      localStorage.setItem(alignStorageKey(dayKey), e.target.value);
+      applyAlign(dayKey);
+    });
   }
 
   // =========================
@@ -175,7 +203,6 @@
   // =========================
   function initRouting() {
     if (typeof window.route !== 'function' || typeof window.navigate !== 'function') {
-      // router.js 側が未準備ならここで止める（静かに失敗させない）
       $('#view').textContent = 'router.js が読み込まれていません';
       return;
     }
@@ -184,15 +211,19 @@
     window.route('/section', (rest) => renderSection((rest || DEFAULT_SECTION).toLowerCase()));
     window.route('/404', () => { $('#view').textContent = '404'; });
 
-    // 初回ハッシュなし対策
     if (!location.hash) location.hash = '#/cover';
-
     window.navigate();
   }
 
   // =========================
   // イベント（ここ1本に集約）
   // =========================
+  let saveTimer = null;
+  function scheduleSave(dayKey) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => saveRows(dayKey), 250);
+  }
+
   function initEvents() {
     // クリック（追加・削除）
     $('#view').addEventListener('click', (e) => {
@@ -204,8 +235,7 @@
       if (del) {
         e.preventDefault();
         e.stopPropagation();
-        const row = del.closest('.row-group');
-        if (row) row.remove();
+        del.closest('.row-group')?.remove();
         if (dayKey) saveRows(dayKey);
         return;
       }
@@ -217,10 +247,8 @@
         if (!rowsEl || !dayKey) return;
         rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
 
-        // 追加直後に一番左上へフォーカス（任意）
         const last = rowsEl.lastElementChild;
-        const firstCell = last?.querySelector('[data-field="sectionTop"]');
-        firstCell?.focus();
+        last?.querySelector('[data-field="sectionTop"]')?.focus();
 
         saveRows(dayKey);
         return;
