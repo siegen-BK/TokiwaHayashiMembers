@@ -1,7 +1,7 @@
 // 最小のレンダラー（まずはこれだけ）
 function renderCover(){
   document.getElementById('view').innerHTML =
-    '<section><h2>表紙</h2><p class="note">ここから機能を少しずつ足していきます。</p></section>';
+    '<section><h2>表紙</h2></section>';
 }
 function renderSection(id){
   const key = (id || 'd1').toLowerCase();
@@ -9,7 +9,7 @@ function renderSection(id){
                 key === 'd2' ? '2026年11月4日(火)' :
                                 '2026年11月5日(水)';
   document.getElementById('view').innerHTML =
-    `<section><h2 id="sectionTitleHeading" title="クリックで編集">${title}</h2><p class="note">（ここに本文を追加します）</p></section>`;
+    `<section><h2 id="sectionTitleHeading" title="クリックで編集">${title}</h2></section>`;
   // 先頭見出しクリックで編集（localStorage保存）
   const LS_KEY = `sectionTitle:${key}`;
   const h = document.getElementById('sectionTitleHeading');
