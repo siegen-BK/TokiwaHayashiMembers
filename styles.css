@@ -209,3 +209,11 @@ main{
   .app-header{ display:none; }
   main{ max-width:none; margin:0; padding:0 18mm; }
 }
+/* === 診断：右端の太線がどこ由来かを色で見分ける（1分だけ） === */
+.first-row-table { border-right: 4px solid red !important; }  /* ヘッダ外枠右 */
+.rows           { border-right: 4px solid blue !important; }  /* 行群外枠右 */
+.row-group      { border-right: 4px solid lime !important; }  /* 行の右枠（もしあれば） */
+
+/* 備考セル（右端セル）だけ強調 */
+.row-group [data-field="notes"] { outline: 4px solid magenta !important; }
+.row-group .cell { border-right: 2px solid orange !important; } /* セル右線 */
