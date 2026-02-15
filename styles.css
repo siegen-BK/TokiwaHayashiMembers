@@ -94,16 +94,17 @@ main{
 }
 
 /* ---- ヘッダ（先頭行） ----
-   外枠：上/左/右のみ
+   外枠：上/左のみ
+   ※右枠は rows 側に任せる（右端太線対策）
    下の線はセル側（格子）に任せて、追加行と二重にしない
 */
 .first-row-table{
   display:grid;
   border-top:1px solid var(--grid);
   border-left:1px solid var(--grid);
-  border-right:1px solid var(--grid);
+  border-right:none;           /* ★修正点：ここを none にした */
   border-bottom:none;
-  margin:8px 0 0; /* ヘッダと行の隙間をゼロ */
+  margin:8px 0 0;              /* ヘッダと行の隙間をゼロ */
 }
 
 /* ヘッダセル：右線＋下線（格子） */
@@ -116,7 +117,7 @@ main{
   background:var(--bg);
   white-space:nowrap;
 }
-/* ヘッダの最後は右線なし（外枠に任せる） */
+/* ヘッダの最後は右線なし（外枠右線を持たないためでもOK） */
 .first-row-table .cell:last-child{
   border-right:none;
 }
@@ -209,11 +210,3 @@ main{
   .app-header{ display:none; }
   main{ max-width:none; margin:0; padding:0 18mm; }
 }
-/* === 診断：右端の太線がどこ由来かを色で見分ける（1分だけ） === */
-.first-row-table { border-right: 4px solid red !important; }  /* ヘッダ外枠右 */
-.rows           { border-right: 4px solid blue !important; }  /* 行群外枠右 */
-.row-group      { border-right: 4px solid lime !important; }  /* 行の右枠（もしあれば） */
-
-/* 備考セル（右端セル）だけ強調 */
-.row-group [data-field="notes"] { outline: 4px solid magenta !important; }
-.row-group .cell { border-right: 2px solid orange !important; } /* セル右線 */
