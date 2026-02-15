@@ -18,15 +18,18 @@ function renderSection(id){
           <h2 id="sectionTitleHeading" title="クリックで編集">${title}</h2>
         </div>
 
-        <!-- 固定の先頭行：区間／大胴／中胴／側胴／鉦／笛 -->
-        <div class="first-row" aria-label="固定先頭行（区間・楽器）">
-          <span class="tag primary">区間</span>
-          <span class="tag">大胴</span>
-          <span class="tag">中胴</span>
-          <span class="tag">側胴</span>
-          <span class="tag">鉦</span>
-          <span class="tag">笛</span>
+        
+<!-- 固定の先頭行（罫線つき 1 行テーブル） -->
+        <div class="first-row-table" role="table" aria-label="固定先頭行（区間・担当）">
+          <div class="cell" role="columnheader">区間・場所</div>
+          <div class="cell" role="columnheader">大胴</div>
+          <div class="cell" role="columnheader">中胴</div>
+          <div class="cell" role="columnheader">側胴</div>
+          <div class="cell" role="columnheader">鉦</div>
+          <div class="cell" role="columnheader">笛</div>
+          <div class="cell" role="columnheader">備考</div>
         </div>
+
      </section>`;
 
   // ---- タイトル編集（localStorage 保存） ----
