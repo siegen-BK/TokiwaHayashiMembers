@@ -126,3 +126,53 @@ main { padding:16px; max-width:960px; margin:0 auto; }
   grid-row: 1 / span 2;
   min-height: 72px;                 /* 36×2 */
 }
+/* 行の外側（右余白）に削除ボタンを出すための設定 */
+.row-group{
+  position: relative; /* これが必須：絶対配置の基準 */
+}
+
+/* 右側の余白に張り出す削除ボタン */
+.row-del{
+  position: absolute;
+  top: 6px;
+  right: -44px;         /* ← 行の外に出す（調整可） */
+  width: 34px;
+  height: 34px;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.row-del:hover{
+  background: #ffecec;
+  border-color: #ff6b6b;
+}
+
+/* 画面が狭いときは内側に戻す（はみ出し防止） */
+@media (max-width: 520px){
+  .row-del{
+    right: 6px;   /* 行の内側へ */
+    top: 6px;
+  }
+}
+
+右余白が足りない場合は、right: -44px を -36px や -52px に調整してください。
+
+---
+
+2) app.js：rowTemplate() に削除ボタンを追加
+あなたの rowTemplate() の最後（</div> の直前）に ボタン1個を追加します。
+function rowTemplate(){
+  return `
+    <div class="row-group" role="rowgroup" aria-label="データ行">
+      <!-- …（既存のcellたち）… -->
+
+      <button class="row-del" type="button" title="この行を削除">🗑</button>
+    </div>
+  `;
+}
