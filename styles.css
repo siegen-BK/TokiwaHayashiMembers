@@ -32,3 +32,43 @@ main { padding:16px; max-width:960px; margin:0 auto; }
   cursor: pointer;
 }
 .btn-add:hover{ background:#dbe9ff; }
+/* 見出し行（＋追加ボタン／タイトル）※既に追加済みならそのままでOK */
+.section-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:12px 0;
+}
+.section-header h2{ margin:0; font-size:28px; font-weight:700; }
+
+/* 固定の先頭行（区間／大胴／中胴／側胴／鉦／笛） */
+.first-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:10px 0 14px;
+}
+.first-row .tag{
+  padding:6px 10px;
+  border:1px solid #ddd;
+  border-radius:14px;
+  background:#f8f8f8;
+  font-size:14px;
+  color:#333;
+}
+.first-row .tag.primary{
+  border-color:#0a7cff;
+  background:#eaf2ff;
+  color:#0a7cff;
+}
+
+/* 追加ボタン（本文用）※既に追加済みならそのままでOK */
+.btn-add{
+  padding:6px 10px;
+  border:1px solid #0a7cff;
+  background:#eaf2ff;
+  color:#0a7cff;
+  border-radius:8px;
+  cursor:pointer;
+}
+.btn-add:hover{ background:#dbe9ff; }
