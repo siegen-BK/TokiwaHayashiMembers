@@ -128,7 +128,6 @@ main{
 .rows{
   border-left:1px solid var(--grid);
   border-right:1px solid var(--grid);
-  border-bottom:1px solid var(--grid);
   margin-top:0;
 }
 
