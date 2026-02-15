@@ -19,38 +19,28 @@
         <h1 id="appTitle" class="title">常磐囃子メンバー表</h1>
       </div>
     </div>
+
+    <!-- 目次（表紙＋3日） -->
     <nav class="tabs">
-  <a class="tab" href="#/cover">表紙</a>
-  <a class="tab" href="#/section/d1">11月3日</a>
-  <a class="tab" href="#/section/d2">11月4日</a>
-  <a class="tab" href="#/section/d3">11月5日</a>
-  <a class="tab" href="#/members">名簿</a>
-  <button id="btnPrint" class="print">🖨 印刷</button>
-  <button id="btnSettings" class="settings">⚙️</button>
-</nav>
+      <a class="tab" href="#/cover">表紙</a>
+      <a class="tab" href="#/section/d1">11月3日</a>
+      <a class="tab" href="#/section/d2">11月4日</a>
+      <a class="tab" href="#/section/d3">11月5日</a>
+      <button id="btnPrint" class="print">🖨 印刷</button>
+      <button id="btnSettings" class="settings">⚙️</button>
+    </nav>
   </header>
 
-  <main id="view"><!-- ここに描画されます --></main>
+  <main id="view"><div style="padding:16px;color:#666;">読み込み中…</div></main>
 
-  <!-- 設定ダイアログ -->
+  <!-- 設定ダイアログ（今は外枠だけ残す。将来用） -->
   <div id="settingsModal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-body">
-      <h3>データソース設定</h3>
-      <label>共有コンフィグJSON URL
-        <input id="remoteConfigUrl" placeholder="https://.../config.remote.json">
-      </label>
-      <label>名簿（members）URL
-        <input id="membersUrl" placeholder="https://.../members.csv or .json">
-      </label>
-      <label>出欠（attendance）URL
-        <input id="attendanceUrl" placeholder="https://.../attendance.csv or .json">
-      </label>
+      <h3>設定</h3>
+      <p class="note">現在は設定項目はありません。</p>
       <div class="actions">
-        <button id="testConn">接続テスト</button>
-        <button id="saveCfg">保存</button>
         <button id="closeCfg">閉じる</button>
       </div>
-      <p id="cfgMsg" class="note"></p>
     </div>
   </div>
 
