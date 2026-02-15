@@ -8,61 +8,21 @@ body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Ari
 .print { margin-left:auto; }
 main { padding:16px; max-width:960px; margin:0 auto; }
 .note { color:#666; }
-/* 見出し行（左に 追加ボタン、右にタイトル） */
-.section-header{
-  display: flex;
-  align-items: center;
-  gap: 8px;             /* ボタンと見出しの間隔 */
-  margin: 12px 0;
-}
 
-.section-header h2{
-  margin: 0;            /* デフォルト余白を詰める */
-  font-size: 28px;      /* お好みで */
-  font-weight: 700;     /* お好みで */
-}
-
-/* 追加ボタン（本文用） */
-.btn-add{
-  padding: 6px 10px;
-  border: 1px solid #0a7cff;
-  background: #eaf2ff;
-  color: #0a7cff;
-  border-radius: 8px;
-  cursor: pointer;
-}
-.btn-add:hover{ background:#dbe9ff; }
-/* 見出し行（＋追加ボタン／タイトル）※既に追加済みならそのままでOK */
+/* ── 見出し行（左：＋追加／右：タイトル） ── */
 .section-header{
   display:flex;
   align-items:center;
   gap:8px;
   margin:12px 0;
 }
-.section-header h2{ margin:0; font-size:28px; font-weight:700; }
-
-/* 固定の先頭行（区間／大胴／中胴／側胴／鉦／笛） */
-.first-row{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin:10px 0 14px;
-}
-.first-row .tag{
-  padding:6px 10px;
-  border:1px solid #ddd;
-  border-radius:14px;
-  background:#f8f8f8;
-  font-size:14px;
-  color:#333;
-}
-.first-row .tag.primary{
-  border-color:#0a7cff;
-  background:#eaf2ff;
-  color:#0a7cff;
+.section-header h2{
+  margin:0;
+  font-size:28px;
+  font-weight:700;
 }
 
-/* 追加ボタン（本文用）※既に追加済みならそのままでOK */
+/* ── 追加ボタン（本文用） ── */
 .btn-add{
   padding:6px 10px;
   border:1px solid #0a7cff;
@@ -72,3 +32,23 @@ main { padding:16px; max-width:960px; margin:0 auto; }
   cursor:pointer;
 }
 .btn-add:hover{ background:#dbe9ff; }
+
+/* ── 先頭行（罫線つき 1 行テーブル） ── */
+.first-row-table{
+  display:grid;
+  /* 区間・場所と備考を少し広めに（比率はお好みで調整） */
+  grid-template-columns: 1.6fr 1fr 1fr 1fr 0.8fr 0.8fr 1.4fr;
+  border:1px solid #222;
+  margin:8px 0 14px;
+}
+.first-row-table .cell{
+  border-right:1px solid #222;
+  border-bottom:1px solid #222; /* 1 行でも下線を入れて見出し行っぽく */
+  padding:10px 12px;
+  text-align:center;
+  font-size:15px;
+  color:#111;
+  background:#fff;
+  white-space:nowrap;
+}
+.first-row-table .cell:last-child{ border-right:none; }
