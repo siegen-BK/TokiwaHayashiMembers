@@ -119,11 +119,6 @@ main{
   white-space:nowrap;
 }
 
-/* ヘッダの最後のセルは右線なし */
-.first-row-table .cell:last-child{
-  border-right:none;
-}
-
 /* ---- 行群（追加行のまとまり） ----
    外枠：左・右のみ
    下外枠は「最後の行の下線」に任せる
