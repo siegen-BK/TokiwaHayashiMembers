@@ -75,6 +75,8 @@ function rowTemplate(){
 
       <!-- 備考（2段ぶち抜き） -->
       <div class="cell span2" style="grid-column:7; grid-row:1 / span 2;" contenteditable="true" data-field="notes"></div>
+
+      <button class="row-del" type="button" title="この行を削除">🗑</button>
     </div>
   `;
 }
