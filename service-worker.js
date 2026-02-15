@@ -1,4 +1,4 @@
-const CACHE = 'hayashi-app-v2'; // ← バージョンを上げて反映を確実に
+const CACHE = 'hayashi-app-v3'; // ← バージョンを上げて反映を確実に
 const ASSETS = [
   './','./index.html','./styles.css',
   './config.js','./config-loader.js',
