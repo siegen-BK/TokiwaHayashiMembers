@@ -89,22 +89,23 @@ main{
 .row-group{
   grid-template-columns:
     var(--col-section)
-    var(--col-part) var(--col-part) var(--col-part) var(--col-part) var(--col-part)
+    var(--col-part) var(--col-part) var(--col-part)
+    var(--col-part) var(--col-part)
     var(--col-notes);
 }
 
 /* ---- ヘッダ（先頭行） ----
-   外枠：上/左のみ
-   ※右枠は rows 側に任せる（右端太線対策）
-   下の線はセル側（格子）に任せて、追加行と二重にしない
+   外枠：上・左のみ
+   右外枠は rows に任せる
+   下線はセル側（格子）に任せる
 */
 .first-row-table{
   display:grid;
   border-top:1px solid var(--grid);
   border-left:1px solid var(--grid);
-  border-right:none;           /* ★修正点：ここを none にした */
+  border-right:none;
   border-bottom:none;
-  margin:8px 0 0;              /* ヘッダと行の隙間をゼロ */
+  margin:8px 0 0;
 }
 
 /* ヘッダセル：右線＋下線（格子） */
@@ -117,13 +118,15 @@ main{
   background:var(--bg);
   white-space:nowrap;
 }
-/* ヘッダの最後は右線なし（外枠右線を持たないためでもOK） */
+
+/* ヘッダの最後のセルは右線なし */
 .first-row-table .cell:last-child{
   border-right:none;
 }
 
 /* ---- 行群（追加行のまとまり） ----
-   外枠：左/右/下のみ（上はヘッダの下線で表現）
+   外枠：左・右のみ
+   下外枠は「最後の行の下線」に任せる
 */
 .rows{
   border-left:1px solid var(--grid);
@@ -132,8 +135,8 @@ main{
 }
 
 /* ---- 追加行（1行＝2段グリッド） ----
-   横線（格子）は row-group の border-bottom で 1本
-   縦線（格子）は cell の border-right
+   横格子：row-group の border-bottom
+   縦格子：cell の border-right
 */
 .row-group{
   display:grid;
@@ -154,7 +157,7 @@ main{
   min-height:var(--h-unit);
 }
 
-/* 右端セルの右線を消す（外枠に任せる→二重線が起きない） */
+/* 右端セル（備考）の右線は消す → 外枠に任せる */
 .row-group .cell:last-of-type{
   border-right:none;
 }
