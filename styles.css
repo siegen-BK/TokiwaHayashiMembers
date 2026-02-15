@@ -169,3 +169,23 @@ main { padding:16px; max-width:960px; margin:0 auto; }
   .first-row-table, .first-row-table .cell,
   .rows, .row-group, .row-group .cell { border-color: #000; }
 }
+/* ==== HOTFIX: ①隙間をゼロにする ==== */
+.first-row-table{ margin-bottom: 0 !important; }
+.rows{ margin-top: 0 !important; }
+
+/* ==== HOTFIX: ②右端だけ太い問題を必ず潰す ==== */
+/* 備考セル（notes）の右罫線を強制的に消す（last-of-type が効かない環境でも確実） */
+.row-group [data-field="notes"]{ border-right: none !important; }
+
+/* もし右枠と重なって見える場合の保険：rowsの右枠は1本だけ */
+.rows{ border-right: 1px solid #222 !important; }
+
+/* ==== HOTFIX: ②「鉦・笛だけ」2段の仕切り線（横線）を確実に入れる ==== */
+/* 下段セルだけ横線を付ける（区間は対象外） */
+.row-group [data-field="kaneBottom"],
+.row-group [data-field="fueBottom"]{
+  border-top: 1px solid #222 !important;
+}
+
+/* ついでに：セルの右罫線が消せていない場合の最終保険（備考以外はそのまま） */
+.row-group .cell{ border-right: 1px solid #222 !important; }
