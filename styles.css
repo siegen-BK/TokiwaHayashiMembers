@@ -38,11 +38,13 @@ main { padding:16px; max-width:960px; margin:0 auto; }
   display:grid;
   /* 区間・場所と備考を少し広めに（比率はお好みで調整） */
   grid-template-columns: 1.6fr 0.92fr 0.92fr 0.92fr 0.92fr 0.92fr 1.4fr;
-  border:1px solid #222;
+  border:1px solid #222;  /* 外枠が下罫線を担当（セル側には border-bottom を持たせない） */
   margin:8px 0 14px;
 }
+
 .first-row-table .cell{
-  border-right:1px solid #222;
+  border-right:1px solid #222;  /* 縦罫線 */
+  /* border-bottom は付けない：最下段が二重線で太く見えるのを防止 */
   padding:10px 12px;
   text-align:center;
   font-size:15px;
