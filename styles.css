@@ -53,3 +53,43 @@ main { padding:16px; max-width:960px; margin:0 auto; }
   white-space:nowrap;
 }
 .first-row-table .cell:last-child{ border-right:none; }
+/* 追加：データ行の左右外枠（ヘッダと揃える） */
+.rows{
+  border-left: 1px solid #222;
+  border-right: 1px solid #222;
+}
+
+/* 追加：データ行 1 本（2 段グリッド） */
+.row-group{
+  display: grid;
+  /* 先頭行と同じ列比率に合わせる */
+  grid-template-columns: 1.6fr 0.92fr 0.92fr 0.92fr 0.92fr 0.92fr 1.4fr;
+  grid-template-rows: 1fr 1fr;        /* 上下 2 段 */
+  border-bottom: 1px solid #222;      /* 行間の水平線（下側） */
+}
+
+/* 追加：セル共通（縦罫線・高さ・中央寄せ） */
+.row-group .cell{
+  border-right: 1px solid #222;
+  padding: 10px 12px;
+  font-size: 15px;
+  color: #111;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;                   /* 基準 1 段の高さ（調整可） */
+}
+.row-group .cell:last-child{ border-right: none; }
+
+/* 追加：2 段ぶち抜き（大胴・中胴・側胴・備考）＝鉦の 2 倍の高さ */
+.row-group .span2{
+  grid-row: 1 / span 2;
+  min-height: 72px;                   /* 36px × 2（調整可） */
+}
+
+/* （任意）印刷時は線を濃く */
+@media print{
+  .first-row-table, .first-row-table .cell,
+  .rows, .row-group, .row-group .cell { border-color: #000; }
+}
