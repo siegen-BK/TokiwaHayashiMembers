@@ -1,48 +1,75 @@
-:root { --ink:#222; }
+:root{
+  --ink:#222;
+  --grid:#222;          /* 罫線色（Excel風） */
+  --bg:#fff;
+  --muted:#666;
 
-* { box-sizing:border-box; }
+  /* 列幅（先頭行/追加行で共通） */
+  --col-section: 1.6fr; /* 区間・場所 */
+  --col-part:    0.92fr;/* 大胴〜笛（均等） */
+  --col-notes:   1.4fr; /* 備考 */
 
-body {
+  /* 行の高さ（2段構成の基準） */
+  --h-unit: 36px;       /* 1段の高さ */
+}
+
+*{ box-sizing:border-box; }
+
+body{
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
   margin:0;
   color:var(--ink);
+  background:var(--bg);
 }
 
-.app-header { border-bottom:1px solid #eee; padding:12px 16px; }
-
-.tabs { display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; }
-
-.tab {
+/* 上部（タブ） */
+.app-header{
+  border-bottom:1px solid #eee;
+  padding:12px 16px;
+}
+.tabs{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-top:8px;
+  flex-wrap:wrap;
+}
+.tab{
   padding:6px 10px;
   border:1px solid #ddd;
   border-radius:8px;
   text-decoration:none;
   color:#222;
 }
+.tab.active{
+  background:#0a7cff;
+  color:#fff;
+  border-color:#0a7cff;
+}
+.print{ margin-left:auto; }
 
-.tab.active { background:#0a7cff; color:#fff; border-color:#0a7cff; }
+main{
+  padding:16px;
+  max-width:960px;
+  margin:0 auto;
+}
 
-.print { margin-left:auto; }
+.note{ color:var(--muted); }
 
-main { padding:16px; max-width:960px; margin:0 auto; }
-
-.note { color:#666; }
-
-/* ── 見出し行（左：＋追加／右：タイトル） ── */
+/* 見出し行（＋追加 / タイトル） */
 .section-header{
   display:flex;
   align-items:center;
   gap:8px;
   margin:12px 0;
 }
-
 .section-header h2{
   margin:0;
   font-size:28px;
   font-weight:700;
 }
 
-/* ── 追加ボタン（本文用） ── */
+/* 追加ボタン */
 .btn-add{
   padding:6px 10px;
   border:1px solid #0a7cff;
@@ -53,72 +80,103 @@ main { padding:16px; max-width:960px; margin:0 auto; }
 }
 .btn-add:hover{ background:#dbe9ff; }
 
-/* ── 先頭行（罫線つき 1 行テーブル） ── */
-.first-row-table{
-  display:grid;
-  grid-template-columns: 1.6fr 0.92fr 0.92fr 0.92fr 0.92fr 0.92fr 1.4fr;
-  border:1px solid #222;
-  margin:8px 0 0; /* ← 先頭行と追加行の隙間を無くす（下を0） */
+/* =========================
+   Excel風：外枠＋格子
+   ========================= */
+
+/* 列定義（ヘッダ/行で共通） */
+.first-row-table,
+.row-group{
+  grid-template-columns:
+    var(--col-section)
+    var(--col-part) var(--col-part) var(--col-part) var(--col-part) var(--col-part)
+    var(--col-notes);
 }
 
+/* ---- ヘッダ（先頭行） ----
+   外枠：上/左/右のみ
+   下の線はセル側（格子）に任せて、追加行と二重にしない
+*/
+.first-row-table{
+  display:grid;
+  border-top:1px solid var(--grid);
+  border-left:1px solid var(--grid);
+  border-right:1px solid var(--grid);
+  border-bottom:none;
+  margin:8px 0 0; /* ヘッダと行の隙間をゼロ */
+}
+
+/* ヘッダセル：右線＋下線（格子） */
 .first-row-table .cell{
-  border-right:1px solid #222;
+  border-right:1px solid var(--grid);
+  border-bottom:1px solid var(--grid);
   padding:10px 12px;
   text-align:center;
   font-size:15px;
-  color:#111;
-  background:#fff;
+  background:var(--bg);
   white-space:nowrap;
 }
-.first-row-table .cell:last-child{ border-right:none; }
+/* ヘッダの最後は右線なし（外枠に任せる） */
+.first-row-table .cell:last-child{
+  border-right:none;
+}
 
-/* ===== 追加行（データ行） ===== */
-
-/* データ行の左右外枠（ヘッダと揃える） */
+/* ---- 行群（追加行のまとまり） ----
+   外枠：左/右/下のみ（上はヘッダの下線で表現）
+*/
 .rows{
-  border-left: 1px solid #222;
-  border-right: 1px solid #222;
-
-  /* 区間欄の配置切替用クラスを付けるため */
+  border-left:1px solid var(--grid);
+  border-right:1px solid var(--grid);
+  border-bottom:1px solid var(--grid);
+  margin-top:0;
 }
 
-/* データ行 1 本（2 段グリッド） */
+/* ---- 追加行（1行＝2段グリッド） ----
+   横線（格子）は row-group の border-bottom で 1本
+   縦線（格子）は cell の border-right
+*/
 .row-group{
-  display: grid;
-  grid-template-columns: 1.6fr 0.92fr 0.92fr 0.92fr 0.92fr 0.92fr 1.4fr;
-  grid-template-rows: 1fr 1fr;        /* 上下 2 段 */
-  border-bottom: 1px solid #222;      /* 行間の水平線（下側） */
-  position: relative;                /* 削除ボタンの絶対配置用 */
+  display:grid;
+  grid-template-rows: 1fr 1fr;      /* 2段 */
+  border-bottom:1px solid var(--grid);
+  position:relative;               /* 削除ボタン用 */
 }
 
-/* セル共通（縦罫線・高さ・中央寄せ） */
+/* セル共通 */
 .row-group .cell{
-  border-right: 1px solid #222;
-  padding: 10px 12px;
-  font-size: 15px;
-  color: #111;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;                   /* 基準 1 段の高さ */
-}
-.row-group .cell:last-of-type{
-  border-right: none;                 /* ← 右端だけ太い問題（🗑が最後でもOK） */
+  border-right:1px solid var(--grid);
+  padding:10px 12px;
+  font-size:15px;
+  background:var(--bg);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:var(--h-unit);
 }
 
-/* 2 段ぶち抜き（大胴・中胴・側胴・備考）＝鉦の 2 倍の高さ */
+/* 右端セルの右線を消す（外枠に任せる→二重線が起きない） */
+.row-group .cell:last-of-type{
+  border-right:none;
+}
+
+/* 2段ぶち抜き（大胴・中胴・側胴・備考） */
 .row-group .span2{
   grid-row: 1 / span 2;
-  min-height: 72px;                   /* 36px × 2 */
+  min-height: calc(var(--h-unit) * 2);
 }
 
-/* 鉦・笛だけ 2段の仕切り線（下段セルに横線を付ける） */
+/* 鉦・笛だけ下段に横線（2段の仕切り） */
 .cell.split-top{
-  border-top: 1px solid #222;
+  border-top:1px solid var(--grid);
 }
 
-/* 行削除ボタン（右余白に出す） */
+/* contenteditable の見やすさ（任意） */
+.row-group .cell[contenteditable="true"]:focus{
+  outline:2px solid #0a7cff33;
+  outline-offset:-2px;
+}
+
+/* 削除ボタン（右余白に出す） */
 .row-del{
   position:absolute;
   top:6px;
@@ -140,53 +198,14 @@ main { padding:16px; max-width:960px; margin:0 auto; }
   border-color:#ff6b6b;
 }
 
-/* 画面が狭いときは内側に戻す */
+/* 画面が狭いときは内側へ */
 @media (max-width: 520px){
   .row-del{ right:6px; }
 }
 
-/* 区間欄の配置切替（rowsコンテナに class を付けて制御） */
-.rows.align-left  [data-field="sectionTop"],
-.rows.align-left  [data-field="sectionBottom"]{
-  justify-content: flex-start;
-  text-align: left;
-}
-
-.rows.align-center [data-field="sectionTop"],
-.rows.align-center [data-field="sectionBottom"]{
-  justify-content: center;
-  text-align: center;
-}
-
-.rows.align-right [data-field="sectionTop"],
-.rows.align-right [data-field="sectionBottom"]{
-  justify-content: flex-end;
-  text-align: right;
-}
-
-/* 印刷時は線を濃く（任意） */
+/* 印刷時（任意：線を濃く） */
 @media print{
-  .first-row-table, .first-row-table .cell,
-  .rows, .row-group, .row-group .cell { border-color: #000; }
+  :root{ --grid:#000; }
+  .app-header{ display:none; }
+  main{ max-width:none; margin:0; padding:0 18mm; }
 }
-/* ==== HOTFIX: ①隙間をゼロにする ==== */
-.first-row-table{ margin-bottom: 0 !important; }
-.rows{ margin-top: 0 !important; }
-
-/* ==== HOTFIX: ②右端だけ太い問題を必ず潰す ==== */
-/* 備考セル（notes）の右罫線を強制的に消す（last-of-type が効かない環境でも確実） */
-.row-group [data-field="notes"]{ border-right: none !important; }
-
-/* もし右枠と重なって見える場合の保険：rowsの右枠は1本だけ */
-.rows{ border-right: 1px solid #222 !important; }
-
-/* ==== HOTFIX: ②「鉦・笛だけ」2段の仕切り線（横線）を確実に入れる ==== */
-/* 下段セルだけ横線を付ける（区間は対象外） */
-.row-group [data-field="kaneBottom"],
-.row-group [data-field="fueBottom"]{
-  border-top: 1px solid #222 !important;
-}
-
-/* ついでに：セルの右罫線が消せていない場合の最終保険（備考以外はそのまま） */
-.row-group .cell{ border-right: 1px solid #222 !important; }
-.row-del { display: none !important; }
