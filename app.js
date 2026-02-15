@@ -148,6 +148,9 @@ function scheduleSave(){
 
 // クリック：追加/削除
 document.getElementById('view').addEventListener('click', (e)=>{
+  console.log('[click]', e.target);
+console.log('closest .row-del:', e.target.closest('.row-del'));
+console.log('closest .row-group:', e.target.closest('.row-group'));
   // 削除ボタン
   const del = e.target.closest('.row-del');
   if (del) {
