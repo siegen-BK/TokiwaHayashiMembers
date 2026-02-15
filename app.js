@@ -3,6 +3,8 @@ function renderCover(){
   document.getElementById('view').innerHTML =
     '<section><h2>表紙</h2></section>';
 }
+
+// 11/3〜11/5 のページ
 function renderSection(id){
   const key = (id || 'd1').toLowerCase();
   const title =
@@ -10,7 +12,7 @@ function renderSection(id){
     key === 'd2' ? '2026年11月4日(火)' :
                    '2026年11月5日(水)';
 
-  // 見出し行＋先頭行＋空の rows コンテナを描画
+  // 見出し行＋先頭行（ヘッダ）＋データ行の追加先
   document.getElementById('view').innerHTML =
     `<section>
         <div class="section-header">
@@ -38,6 +40,7 @@ function renderSection(id){
   const LS_KEY = `sectionTitle:${key}`;
   const saved = localStorage.getItem(LS_KEY);
   if (saved && saved.trim()) h.textContent = saved.trim();
+
   h.style.cursor = 'pointer';
   h.addEventListener('click', ()=>{
     const current = localStorage.getItem(LS_KEY) || h.textContent;
@@ -48,15 +51,9 @@ function renderSection(id){
     localStorage.setItem(LS_KEY, next);
     h.textContent = next;
   });
-
-  -  // 追加ボタン：行を 1 本追加
--  const rowsEl = document.getElementById('rows');
--  document.getElementById('btnAddInline')?.addEventListener('click', ()=>{
--    rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
--  });
 }
 
-// 行 1 本（2 段グリッド）のテンプレート
+// ===== 行テンプレート（2段＋ぶち抜き） =====
 function rowTemplate(){
   return `
     <div class="row-group" role="rowgroup" aria-label="データ行">
@@ -82,19 +79,26 @@ function rowTemplate(){
     </div>
   `;
 }
-// ルーティング登録と初期化
+
+// ===== ルーティング登録と初期化 =====
 route('/cover', ()=>renderCover());
 route('/section', rest=>renderSection(rest));
+
+// 初回アクセス時の内部404対策（ハッシュが無い場合）
+if (!location.hash) location.hash = '#/cover';
+
 navigate();
 
+// ===== 「＋追加」クリック（イベント委譲：取りこぼし防止） =====
 document.getElementById('view').addEventListener('click', (e)=>{
   const btn = e.target.closest('#btnAddInline');
   if (!btn) return;
 
   const rowsEl = document.getElementById('rows');
-  if (!rowsEl) return;                 // セクション未描画時は無視
+  if (!rowsEl) return;  // section 以外では無視
+
   rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
 });
 
-// 印刷ボタン
+// ===== 印刷ボタン =====
 document.getElementById('btnPrint')?.addEventListener('click', ()=>window.print());
