@@ -48,7 +48,7 @@ function renderSection(id){
     h.textContent = next;
   });
 
-  // ---- 行データを復元 ----
+  // ---- 行データ復元 ----
   restoreRows(key);
 }
 
@@ -84,7 +84,7 @@ function rowTemplate(){
 // ===== 保存・復元 =====
 function rowsStorageKey(dayKey){ return `rows:${dayKey}`; }
 
-function serializeRows(dayKey){
+function serializeRows(){
   const rowsEl = document.getElementById('rows');
   if (!rowsEl) return [];
 
@@ -99,7 +99,7 @@ function serializeRows(dayKey){
 }
 
 function saveRows(dayKey){
-  const data = serializeRows(dayKey);
+  const data = serializeRows();
   localStorage.setItem(rowsStorageKey(dayKey), JSON.stringify(data));
 }
 
@@ -132,34 +132,43 @@ route('/section', rest=>renderSection(rest));
 if (!location.hash) location.hash = '#/cover';
 navigate();
 
-// ===== 追加・編集イベント（委譲・デバウンス保存） =====
+// ===== 追加・削除・編集のイベント（委譲） =====
 let saveTimer = null;
+function currentDayKey(){
+  const parts = (location.hash || '').split('/');
+  // '#/section/d2' -> ['#','section','d2']
+  return (parts[1] === 'section') ? ((parts[2] || 'd1').toLowerCase()) : null;
+}
 function scheduleSave(){
-  const hash = location.hash || '';
-  const parts = hash.split('/');
-  if (parts[1] !== 'section') return;
-  const dayKey = (parts[2] || 'd1').toLowerCase();
-
+  const dayKey = currentDayKey();
+  if (!dayKey) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(()=>saveRows(dayKey), 250);
 }
 
+// クリック：追加/削除
 document.getElementById('view').addEventListener('click', (e)=>{
-  const btn = e.target.closest('#btnAddInline');
-  if (!btn) return;
+  // 削除ボタン
+  const del = e.target.closest('.row-del');
+  if (del) {
+    del.closest('.row-group')?.remove();
+    scheduleSave();
+    return;
+  }
 
-  const hash = location.hash || '';
-  const parts = hash.split('/');
-  const dayKey = (parts[2] || 'd1').toLowerCase();
-
-  const rowsEl = document.getElementById('rows');
-  if (!rowsEl) return;
-
-  rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
-  saveRows(dayKey); // 追加直後は即保存
+  // 追加ボタン
+  const add = e.target.closest('#btnAddInline');
+  if (add) {
+    const rowsEl = document.getElementById('rows');
+    if (!rowsEl) return;
+    rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
+    // 追加直後は即保存
+    const dayKey = currentDayKey();
+    if (dayKey) saveRows(dayKey);
+  }
 });
 
-// セル編集を拾って保存（入力・貼り付け・IME確定を拾える）
+// 入力：セル編集を保存（デバウンス）
 document.getElementById('view').addEventListener('input', (e)=>{
   if (!e.target.closest('#rows')) return;
   scheduleSave();
