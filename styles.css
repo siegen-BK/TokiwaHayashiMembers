@@ -189,3 +189,4 @@ main { padding:16px; max-width:960px; margin:0 auto; }
 
 /* ついでに：セルの右罫線が消せていない場合の最終保険（備考以外はそのまま） */
 .row-group .cell{ border-right: 1px solid #222 !important; }
+.row-del { display: none !important; }
