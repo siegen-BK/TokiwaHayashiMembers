@@ -60,7 +60,7 @@
   }
 
   // ========= Line（行）ユーティリティ =========
-  // エスケープ
+  // エスケープ（※二重エスケープを起こさない正しい順）
   const esc = (s) => (s || '')
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
@@ -305,10 +305,35 @@
     window.navigate();
   }
 
+  // ========= IME 変換フラグ =========
+  let isComposing = false;
+
   // ========= クリック＆入力（委譲1本） =========
   let selectedLine = null; // 現在選択中の .ln
 
   function initEvents() {
+    // --- IME 変換開始/終了 ---
+    $('#view').addEventListener('compositionstart', () => {
+      isComposing = true;
+    });
+    $('#view').addEventListener('compositionend', (e) => {
+      isComposing = false;
+
+      const cell = e.target.closest(
+        '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
+        '#rows .cell[contenteditable="true"][data-field="sectionBottom"], ' +
+        '#rows .cell[contenteditable="true"][data-field="notes"]'
+      );
+      const dayKey = getDayKeyFromHash && getDayKeyFromHash();
+      if (!cell || !dayKey) return;
+
+      // 変換確定時に1回だけ行整形
+      if (cell.querySelector('.ln')) rebuildLines(cell);
+      else normalizeLines(cell);
+
+      saveRows(dayKey);
+    });
+
     // クリック（追加・削除・区間結合・行選択）
     $('#view').addEventListener('click', (e) => {
       const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
@@ -403,6 +428,8 @@
 
     // 入力（contenteditable） → 行ラップ再構成＋保存
     $('#view').addEventListener('input', (e) => {
+      if (isComposing) return; // IME変換中は組み替えない
+
       const cell = e.target.closest(
         '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
         '#rows .cell[contenteditable="true"][data-field="sectionBottom"], ' +
