@@ -94,10 +94,7 @@ main{
     var(--col-notes);
 }
 
-/* ---- ヘッダ（先頭行） ----
-   外枠：上・左・右（行群と同条件）
-   下線はセル側（格子）に任せる
-*/
+/* ---- ヘッダ（先頭行） ---- */
 .first-row-table{
   display:grid;
   border-top:1px solid var(--grid);
@@ -109,7 +106,7 @@ main{
   row-gap:0;
 }
 
-/* ヘッダセル：全セルに下線、縦線は「最後以外のセル」にだけ */
+/* ヘッダセル：全セルに下線、縦線は「最後以外」 */
 .first-row-table .cell{
   border-bottom:1px solid var(--grid);
   padding:10px 12px;
@@ -122,48 +119,40 @@ main{
   border-right:1px solid var(--grid);
 }
 
-/* ---- 行群（追加行のまとまり） ----
-   外枠：左・右のみ
-   最下端の線は「最後の行の下線」に任せる
-*/
+/* ---- 行群 ---- */
 .rows{
   border-left:1px solid var(--grid);
   border-right:1px solid var(--grid);
   margin-top:0;
-  /* 横幅の揺れ対策が必要なら有効化 */
-  /* overflow-x:hidden; */
+  /* overflow-x:hidden; 必要時のみ */
 }
 
-/* ---- 追加行（1行＝2段グリッド） ----
-   横格子：row-group の border-bottom
-   縦格子：cell の border-right（最後のみ除外）
-*/
+/* ---- 追加行（1行＝2段グリッド） ---- */
 .row-group{
   display:grid;
-  grid-template-rows: 1fr 1fr;      /* 2段 */
+  grid-template-rows: 1fr 1fr;
   border-bottom:1px solid var(--grid);
-  position:relative;               /* 余白ボタン(削除/結合)の絶対配置基準 */
+  position:relative;               /* 右/左の外側ボタンの基準 */
   column-gap:0;
   row-gap:0;
 }
 
-/* セル共通（※行内の .ln を使うため1回に統合） */
+/* セル共通 */
 .row-group .cell{
   border-right:1px solid var(--grid);
   padding:10px 12px;
   font-size:15px;
   background:var(--bg);
 
-  /* 行(.ln)を縦に積む */
   display:flex;
   flex-direction:column;
-  align-items:stretch;     /* .ln を幅いっぱいに */
-  justify-content:center;  /* 縦方向の中央寄せ（不要なら normal） */
+  align-items:stretch;
+  justify-content:center;
 
   min-height:var(--h-unit);
 }
 
-/* 右端セル（備考）の右線は外枠に任せる → 二重防止 */
+/* 右端セル（備考）は右線なし → 外枠に任せる */
 .row-group .cell:last-of-type{
   border-right:none;
 }
@@ -174,7 +163,7 @@ main{
   min-height: calc(var(--h-unit) * 2);
 }
 
-/* 鉦・笛だけ下段に横線（2段の仕切り） */
+/* 鉦・笛：下段に仕切り線 */
 .cell.split-top{
   border-top:1px solid var(--grid);
 }
@@ -182,7 +171,6 @@ main{
 /* =========================
    区間 2段結合/解除（merge-section）
    ========================= */
-/* 結合時：Top を2段ぶち抜き、Bottom を隠す */
 .row-group.merge-section [data-field="sectionTop"]{
   grid-row: 1 / span 2;
   min-height: calc(var(--h-unit) * 2);
@@ -192,24 +180,13 @@ main{
 }
 
 /* =========================
-   行内テキストの行単位制御（.ln）
+   行内テキスト（.ln）は今は未使用でも残置OK
    ========================= */
-/* セル内の行（1行＝1ブロック） */
-.cell .ln{
-  display:block;
-  width:100%;
-}
-
-/* 行ごとの水平揃え（line 単位） */
+.cell .ln{ display:block; width:100%; }
 .ln.align-left  { text-align:left; }
 .ln.align-center{ text-align:center; }
 .ln.align-right { text-align:right; }
-
-/* 選択中行の視覚強調（任意） */
-.ln.is-selected{
-  outline:2px solid #0a7cff;
-  outline-offset:-2px;
-}
+.ln.is-selected{ outline:2px solid #0a7cff; outline-offset:-2px; }
 
 /* 右下の文字揃えツールバー（選択時だけ表示） */
 .align-toolbar{
@@ -236,31 +213,40 @@ main{
 .align-toolbar button:hover{ background:#eee; }
 
 /* =========================
-   余白ボタン（削除＝右 / 結合＝左）
+   右外側：ツール／削除（行の垂直中央）
    ========================= */
+.row-tools,
 .row-del{
   position:absolute;
-  top:6px;
-  right:-44px;
-  width:34px; height:34px;
+  top:50%;
+  transform:translateY(-50%);
+  width:34px;
+  height:34px;
   border:1px solid #cfcfcf;
   border-radius:8px;
   background:#fff;
   cursor:pointer;
-  display:grid; place-items:center;
-  font-size:16px; line-height:1;
+  display:grid;
+  place-items:center;
+  font-size:16px;
+  line-height:1;
   z-index:10;
 }
-.row-del:hover{
-  background:#ffecec;
-  border-color:#ff6b6b;
-}
+/* 並び：行右端 | ツール | 削除 */
+.row-tools{ right:-44px; }
+.row-del  { right:-84px; }
 
-/* 区間 2段結合/解除トグル（左側） */
-.row-merge{
+.row-tools:hover{ background:#eef7ff; border-color:#0a7cff; }
+.row-del:hover  { background:#ffecec; border-color:#ff6b6b; }
+
+/* =========================
+   左外側：入れ替え（⇅）
+   ========================= */
+.row-swap{
   position:absolute;
-  top:6px;
+  top:50%;
   left:-44px;
+  transform:translateY(-50%);
   width:34px; height:34px;
   border:1px solid #cfcfcf;
   border-radius:8px;
@@ -270,18 +256,19 @@ main{
   font-size:16px; line-height:1;
   z-index:10;
 }
-.row-merge:hover{
+.row-swap:hover{
   background:#eef7ff;
   border-color:#0a7cff;
 }
 
-/* 画面が狭いときは余白→内側へ */
+/* 画面が狭いときは内側へ（右はツール→削除の順で内側へ） */
 @media (max-width: 520px){
-  .row-del{ right:6px; }
-  .row-merge{ left:6px; }
+  .row-tools{ right:6px;  }
+  .row-del  { right:46px; }
+  .row-swap { left:6px;   }
 }
 
-/* 印刷時（任意：線を濃く） */
+/* 印刷 */
 @media print{
   :root{ --grid:#000; }
   .app-header{ display:none; }
