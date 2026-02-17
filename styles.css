@@ -95,8 +95,7 @@ main{
 }
 
 /* ---- ヘッダ（先頭行） ----
-   外枠：上・左のみ
-   右外枠は rows に任せる
+   外枠：上・左のみ（右は rows に任せる）
    下線はセル側（格子）に任せる
 */
 .first-row-table{
@@ -121,7 +120,7 @@ main{
 
 /* ---- 行群（追加行のまとまり） ----
    外枠：左・右のみ
-   下外枠は「最後の行の下線」に任せる
+   最下端の線は「最後の行の下線」に任せる
 */
 .rows{
   border-left:1px solid var(--grid);
@@ -137,22 +136,26 @@ main{
   display:grid;
   grid-template-rows: 1fr 1fr;      /* 2段 */
   border-bottom:1px solid var(--grid);
-  position:relative;               /* 削除ボタン用 */
+  position:relative;               /* 余白ボタン(削除/結合)の絶対配置基準 */
 }
 
-/* セル共通 */
+/* セル共通（※行内の .ln を使うため1回に統合） */
 .row-group .cell{
   border-right:1px solid var(--grid);
   padding:10px 12px;
   font-size:15px;
   background:var(--bg);
+
+  /* 行(.ln)を縦に積む */
   display:flex;
-  align-items:center;
-  justify-content:center;
+  flex-direction:column;
+  align-items:stretch;     /* .ln を幅いっぱいに */
+  justify-content:center;  /* 縦方向の中央寄せ（不要なら normal） */
+
   min-height:var(--h-unit);
 }
 
-/* 右端セル（備考）の右線は消す → 外枠に任せる */
+/* 右端セル（備考）の右線は外枠に任せる → 二重防止 */
 .row-group .cell:last-of-type{
   border-right:none;
 }
@@ -168,27 +171,76 @@ main{
   border-top:1px solid var(--grid);
 }
 
-/* contenteditable の見やすさ（任意） */
-.row-group .cell[contenteditable="true"]:focus{
-  outline:2px solid #0a7cff33;
+/* =========================
+   区間 2段結合/解除（merge-section）
+   ========================= */
+/* 結合時：Top を2段ぶち抜き、Bottom を隠す */
+.row-group.merge-section [data-field="sectionTop"]{
+  grid-row: 1 / span 2;
+  min-height: calc(var(--h-unit) * 2);
+}
+.row-group.merge-section [data-field="sectionBottom"]{
+  display:none;
+}
+
+/* =========================
+   行内テキストの行単位制御（.ln）
+   ========================= */
+/* セル内の行（1行＝1ブロック） */
+.cell .ln{
+  display:block;
+  width:100%;
+}
+
+/* 行ごとの水平揃え（line 単位） */
+.ln.align-left  { text-align:left; }
+.ln.align-center{ text-align:center; }
+.ln.align-right { text-align:right; }
+
+/* 選択中行の視覚強調（任意） */
+.ln.is-selected{
+  outline:2px solid #0a7cff;
   outline-offset:-2px;
 }
 
-/* 削除ボタン（右余白に出す） */
+/* 右下の文字揃えツールバー（選択時だけ表示） */
+.align-toolbar{
+  position:fixed;
+  right:14px;
+  bottom:14px;
+  z-index:9999;
+  display:flex;
+  gap:8px;
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:10px;
+  padding:8px;
+  box-shadow:0 6px 18px rgba(0,0,0,.12);
+}
+.align-toolbar.hidden{ display:none; }
+.align-toolbar button{
+  padding:6px 10px;
+  border:1px solid #ccc;
+  background:#f8f8f8;
+  border-radius:8px;
+  cursor:pointer;
+}
+.align-toolbar button:hover{ background:#eee; }
+
+/* =========================
+   余白ボタン（削除＝右 / 結合＝左）
+   ========================= */
 .row-del{
   position:absolute;
   top:6px;
   right:-44px;
-  width:34px;
-  height:34px;
+  width:34px; height:34px;
   border:1px solid #cfcfcf;
   border-radius:8px;
   background:#fff;
   cursor:pointer;
-  display:grid;
-  place-items:center;
-  font-size:16px;
-  line-height:1;
+  display:grid; place-items:center;
+  font-size:16px; line-height:1;
   z-index:10;
 }
 .row-del:hover{
@@ -196,9 +248,29 @@ main{
   border-color:#ff6b6b;
 }
 
-/* 画面が狭いときは内側へ */
+/* 区間 2段結合/解除トグル（左側） */
+.row-merge{
+  position:absolute;
+  top:6px;
+  left:-44px;
+  width:34px; height:34px;
+  border:1px solid #cfcfcf;
+  border-radius:8px;
+  background:#fff;
+  cursor:pointer;
+  display:grid; place-items:center;
+  font-size:16px; line-height:1;
+  z-index:10;
+}
+.row-merge:hover{
+  background:#eef7ff;
+  border-color:#0a7cff;
+}
+
+/* 画面が狭いときは余白→内側へ */
 @media (max-width: 520px){
   .row-del{ right:6px; }
+  .row-merge{ left:6px; }
 }
 
 /* 印刷時（任意：線を濃く） */
@@ -207,51 +279,3 @@ main{
   .app-header{ display:none; }
   main{ max-width:none; margin:0; padding:0 18mm; }
 }
-/* セル内の行（1行＝1ブロック） */
-.cell .ln{
-  display: block;
-  width: 100%;
-}
-
-/* 行ごとの水平揃え（line 単位） */
-.ln.align-left  { text-align: left; }
-.ln.align-center{ text-align: center; }
-.ln.align-right { text-align: right; }
-
-/* セルは縦に行を並べる（既存の flex 水平センタリングは行内の text-align に委譲） */
-.row-group .cell{
-  display: flex;
-  flex-direction: column;   /* ← 行を縦に積む */
-  align-items: stretch;     /* 行 .ln は幅いっぱい */
-  justify-content: center;  /* 縦方向の中央寄せ（不要なら normal に） */
-}
-
-/* 選択中行の視覚強調（任意） */
-.ln.is-selected{
-  outline: 2px solid #0a7cff;
-  outline-offset: -2px;
-}
-
-/* 右下の揃えツールバー（既にお持ちならそのまま流用可） */
-.align-toolbar{
-  position: fixed;
-  right: 14px;
-  bottom: 14px;
-  z-index: 9999;
-  display: flex;
-  gap: 8px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 8px;
-  box-shadow: 0 6px 18px rgba(0,0,0,.12);
-}
-.align-toolbar.hidden{ display:none; }
-.align-toolbar button{
-  padding: 6px 10px;
-  border: 1px solid #ccc;
-  background: #f8f8f8;
-  border-radius: 8px;
-  cursor: pointer;
-}
-.align-toolbar button:hover{ background:#eee; }
