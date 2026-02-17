@@ -95,7 +95,7 @@ main{
 }
 
 /* ---- ヘッダ（先頭行） ----
-   外枠：上・左のみ（右は rows に任せる）
+   外枠：上・左・右（行群と同条件）
    下線はセル側（格子）に任せる
 */
 .first-row-table{
@@ -105,17 +105,21 @@ main{
   border-right:1px solid var(--grid);
   border-bottom:none;
   margin:8px 0 0;
+  column-gap:0;
+  row-gap:0;
 }
 
-/* ヘッダセル：右線＋下線（格子） */
+/* ヘッダセル：全セルに下線、縦線は「最後以外のセル」にだけ */
 .first-row-table .cell{
-  border-right:1px solid var(--grid);
   border-bottom:1px solid var(--grid);
   padding:10px 12px;
   text-align:center;
   font-size:15px;
   background:var(--bg);
   white-space:nowrap;
+}
+.first-row-table .cell:not(:last-child){
+  border-right:1px solid var(--grid);
 }
 
 /* ---- 行群（追加行のまとまり） ----
@@ -126,17 +130,21 @@ main{
   border-left:1px solid var(--grid);
   border-right:1px solid var(--grid);
   margin-top:0;
+  /* 横幅の揺れ対策が必要なら有効化 */
+  /* overflow-x:hidden; */
 }
 
 /* ---- 追加行（1行＝2段グリッド） ----
    横格子：row-group の border-bottom
-   縦格子：cell の border-right
+   縦格子：cell の border-right（最後のみ除外）
 */
 .row-group{
   display:grid;
   grid-template-rows: 1fr 1fr;      /* 2段 */
   border-bottom:1px solid var(--grid);
   position:relative;               /* 余白ボタン(削除/結合)の絶対配置基準 */
+  column-gap:0;
+  row-gap:0;
 }
 
 /* セル共通（※行内の .ln を使うため1回に統合） */
