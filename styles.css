@@ -28,12 +28,12 @@ body{
   background:var(--bg);
 }
 
-/* ===== ① タブ（アプリヘッダ）：最上段に sticky 固定 ===== */
+/* ===== ① タブ（アプリヘッダ）最上段に固定 ===== */
 .app-header{
   position: sticky;
-  top: 0;                     /* 画面最上段に張り付く */
-  z-index: 60;
-  background:#fff;            /* 透け防止 */
+  top: 0;                       /* 画面最上段 */
+  z-index: 100;                 /* 最前面 */
+  background:#fff;              /* 透け防止 */
   border-bottom:1px solid #eee;
   padding:12px 16px;
 }
@@ -64,19 +64,18 @@ main{
   margin:0 auto;
 }
 
-.note{ color:var(--muted); }
-
-/* ===== ② タイトル＆ボタン行（タブ直下に sticky 固定） ===== */
+/* ===== ② タイトル＆書式ボタン（タブ直下に固定・左上配置） ===== */
 .section-toolbar{
   position: sticky;
-  top: var(--sticky-top-toolbar);     /* JS でタブ高を反映 */
-  z-index: 50;
-  background:#fff;                    /* 透け防止 */
-  border-bottom:1px solid var(--grid);
+  top: var(--sticky-top-toolbar);  /* JS でタブ高を反映 */
+  z-index: 90;
+  background:#fff;                 /* 透け防止 */
+  border-bottom:1px solid transparent; /* ← 下線は引かず、太線化の種を断つ */
+  box-shadow: 0 1px 0 rgba(0,0,0,.08);  /* 視覚分離は影で表現（1px相当） */
 
   max-width:960px;
   margin:0 auto;
-  min-height:44px;                    /* タイトルの高さ確保 */
+  min-height:44px;                 /* タイトル行高さ */
 }
 .toolbar-left{
   position:absolute;
@@ -121,21 +120,26 @@ main{
     var(--col-notes);
 }
 
-/* ===== ③ 先頭行（表ヘッダ）：ツールバー直下に sticky 固定 ===== */
+/* ===== ③ 先頭行（表ヘッダ）：ツールバー直下に固定 ===== */
 .first-row-table{
   display:grid;
-  border-top:1px solid var(--grid);
+
+  /* 外枠：上線は “border” ではなく “inset の 1px 影” で描く
+     → どんな組み合わせでも太線化しない */
   border-left:1px solid var(--grid);
   border-right:1px solid var(--grid);
   border-bottom:none;
+  /* border-top は使わない */
+  box-shadow: inset 0 1px 0 var(--grid);
+
   margin:0;
   column-gap:0;
   row-gap:0;
 
   position: sticky;
-  top: var(--sticky-top-tablehead);   /* JS でタブ＋ツールバー高を反映 */
-  z-index: 40;
-  background:#fff;                    /* 透け防止 */
+  top: var(--sticky-top-tablehead);   /* JS でタブ＋ツールバー高 */
+  z-index: 80;
+  background:#fff;                    /* 透け防止・ボタンも覆う */
 }
 
 .first-row-table .cell{
@@ -157,6 +161,8 @@ main{
 
 /* ---- データ行群（スクロールで動くのはここだけ） ---- */
 .rows{
+  position:relative;               /* スタッキング文脈を区切る保険 */
+  z-index: 1;
   border-left:1px solid var(--grid);
   border-right:1px solid var(--grid);
   margin-top:0;
@@ -221,7 +227,7 @@ main{
   place-items:center;
   font-size:16px;
   line-height:1;
-  z-index:10;
+  z-index:5;                        /* ← 上の固定帯(z=80/90/100)に確実に隠れる */
 }
 .row-tools{ right:-44px; }
 .row-del  { right:-84px; }
@@ -247,7 +253,7 @@ main{
   cursor:pointer;
   display:grid; place-items:center;
   font-size:16px; line-height:1;
-  z-index:11;
+  z-index:5;                           /* ← 上の固定帯に確実に隠れる */
 }
 .swap-slot .row-swap:hover{
   background:#eef7ff; border-color:#0a7cff;
@@ -263,6 +269,8 @@ main{
 /* 印刷 */
 @media print{
   :root{ --grid:#000; }
-  .app-header{ display:none; }
+  .app-header{ position:static; } /* 印刷用は固定解除 */
+  .section-toolbar{ position:static; box-shadow:none; }
+  .first-row-table{ position:static; box-shadow: inset 0 1px 0 #000; }
   main{ max-width:none; margin:0; padding:0 18mm; }
 }
