@@ -156,12 +156,11 @@
   function setStickyOffsets(){
     // タブ（.app-header）高さ
     const appH = document.querySelector('.app-header')?.offsetHeight || 0;
-    document.documentElement.style.setProperty('--sticky-top-appheader', `${0}px`);
 
     // ツールバーはタブ直下
     document.documentElement.style.setProperty('--sticky-top-toolbar', `${appH}px`);
 
-    // いったんレイアウト済みのツールバー高さを取得
+    // ツールバー高さ（レイアウト後値）
     const toolbarH = document.querySelector('.section-toolbar')?.offsetHeight || 0;
 
     // 先頭行はタブ＋ツールバー直下
@@ -178,7 +177,7 @@
 
     $('#view').innerHTML = `
       <section>
-        <!-- 左上固定のツールバー：左に[左/中/右]+追加、中央にタイトル -->
+        <!-- 左上固定：書式ボタン＋追加／中央タイトル -->
         <div class="section-toolbar">
           <div class="toolbar-left">
             <div class="align-inline" id="inlineAlign">
@@ -191,7 +190,7 @@
           <h2 class="sheet-title" id="sectionTitleHeading" title="クリックで編集">${titleDefault}</h2>
         </div>
 
-        <!-- 先頭行（ツールバー直下に固定） -->
+        <!-- 先頭行（固定） -->
         <div class="first-row-table" role="table" aria-label="固定先頭行（区間・楽器）">
           <div class="cell" role="columnheader">区間・場所</div>
           <div class="cell" role="columnheader">大胴</div>
@@ -225,7 +224,7 @@
     // 行復元＋スロット再構成
     restoreRows(dayKey);
 
-    // sticky の top を算出（タブ→ツールバー→先頭行）
+    // sticky の top を算出
     setStickyOffsets();
   }
 
@@ -321,7 +320,7 @@
         last?.querySelector('[data-field="sectionTop"]')?.focus();
         saveRows(dayKey);
         rebuildSwapSlots();
-        setStickyOffsets(); // 念のため（高さが変化した場合）
+        setStickyOffsets(); // 念のため（高さが変わった場合）
         return;
       }
     });
