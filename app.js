@@ -2,7 +2,6 @@
   // ========= 設定 =========
   const STORAGE_PREFIX = 'membersApp:'; // localStorageキー接頭辞
   const DEFAULT_DAY = 'd1';
-
   const TITLE_BY_DAY = {
     d1: '2026年11月3日(月･祝)',
     d2: '2026年11月4日(火)',
@@ -19,7 +18,6 @@
     const k = (parts[2] || DEFAULT_DAY).toLowerCase();
     return (k === 'd1' || k === 'd2' || k === 'd3') ? k : DEFAULT_DAY;
   }
-
   const titleKey = (dayKey) => `${STORAGE_PREFIX}title:${dayKey}`;
   const rowsKey  = (dayKey)  => `${STORAGE_PREFIX}rows:${dayKey}`;
 
@@ -29,7 +27,6 @@
 
   // ========= 配置（左/中/右） =========
   const ALIGN_FIELDS = new Set(['sectionTop','sectionBottom','notes']);
-
   function applyAlign(cell, align) {
     cell.classList.remove('align-left','align-center','align-right');
     cell.classList.add(`align-${align}`);
@@ -50,7 +47,7 @@
     return 'center';
   }
 
-  // ========= 行テンプレ（2段＋ぶち抜き） =========
+  // ========= 行テンプレ =========
   function rowTemplate() {
     return `
       <div class="row-group" role="rowgroup" aria-label="データ行">
@@ -74,19 +71,18 @@
         <!-- 備考（2段ぶち抜き） -->
         <div class="cell span2" style="grid-column:7; grid-row:1 / span 2;" contenteditable="true" data-field="notes"></div>
 
-        <!-- 右外側：ツール | 削除（中央揃え） -->
+        <!-- 右外側：ツール | 削除 -->
         <button class="row-tools"  type="button" title="ツール">⋯</button>
         <button class="row-del"    type="button" title="この行を削除">🗑</button>
       </div>
     `;
   }
 
-  // ========= 行間スロット（⇅）を再構成 =========
+  // ========= 行間 ⇅ スロット =========
   function rebuildSwapSlots(){
     const rowsEl = $('#rows');
     if (!rowsEl) return;
     rowsEl.querySelectorAll('.swap-slot').forEach(el => el.remove());
-
     const rows = Array.from(rowsEl.querySelectorAll('.row-group'));
     for (let i = 0; i < rows.length - 1; i++){
       const slot = document.createElement('div');
@@ -106,8 +102,7 @@
         const field = cell.dataset.field;
         const text = (cell.textContent || '').trim();
         if (ALIGN_FIELDS.has(field)) {
-          const a = getAlign(cell);
-          obj[field] = { t: text, a };
+          obj[field] = { t: text, a: getAlign(cell) };
         } else {
           obj[field] = text;
         }
@@ -119,23 +114,16 @@
     localStorage.setItem(rowsKey(dayKey), JSON.stringify(serializeRows()));
   }
   function restoreRows(dayKey) {
-    const rowsEl = $('#rows');
-    if (!rowsEl) return;
+    const rowsEl = $('#rows'); if (!rowsEl) return;
     rowsEl.innerHTML = '';
-
-    const raw = localStorage.getItem(rowsKey(dayKey));
-    if (!raw) return;
-
-    const data = safeJsonParse(raw, []);
-    if (!Array.isArray(data)) return;
+    const raw = localStorage.getItem(rowsKey(dayKey)); if (!raw) return;
+    const data = safeJsonParse(raw, []); if (!Array.isArray(data)) return;
 
     for (const rowObj of data) {
       rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
       const group = rowsEl.lastElementChild;
-
       group.querySelectorAll('[data-field]').forEach(cell => {
-        const field = cell.dataset.field;
-        const v = rowObj[field];
+        const field = cell.dataset.field; const v = rowObj[field];
         if (ALIGN_FIELDS.has(field)) {
           if (v && typeof v === 'object') {
             if (v.t) cell.textContent = v.t;
@@ -151,11 +139,10 @@
         }
       });
     }
-
     rebuildSwapSlots();
   }
 
-  // ========= sticky の top を算出（タブ → ツールバー → 先頭行） =========
+  // ========= sticky の top / 高さを算出 =========
   function setStickyOffsets(){
     // タブ（.app-header）高さ
     const appH = document.querySelector('.app-header')?.offsetHeight || 0;
@@ -163,8 +150,10 @@
     // ツールバーはタブ直下
     document.documentElement.style.setProperty('--sticky-top-toolbar', `${appH}px`);
 
-    // ツールバー高さ（レイアウト後）
-    const toolbarH = document.querySelector('.section-toolbar')?.offsetHeight || 0;
+    // ツールバー高さ（レイアウト後の実高をCSS変数へ）
+    const toolbarEl = document.querySelector('.section-toolbar');
+    const toolbarH  = toolbarEl?.offsetHeight || 44;
+    document.documentElement.style.setProperty('--toolbar-h', `${toolbarH}px`);
 
     // 先頭行はタブ＋ツールバー直下
     document.documentElement.style.setProperty('--sticky-top-tablehead', `${appH + toolbarH}px`);
@@ -180,7 +169,7 @@
 
     $('#view').innerHTML = `
       <section>
-        <!-- 左上固定：書式ボタン＋追加／中央タイトル -->
+        <!-- 左上固定（タブ直下） -->
         <div class="section-toolbar">
           <div class="toolbar-left">
             <div class="align-inline" id="inlineAlign">
@@ -204,12 +193,12 @@
           <div class="cell" role="columnheader">備考</div>
         </div>
 
-        <!-- 以降の行 -->
+        <!-- ここから下がスクロール対象 -->
         <div id="rows" class="rows"></div>
       </section>
     `;
 
-    // タイトル復元＆編集
+    // タイトル復元
     const h = $('#sectionTitleHeading');
     const saved = localStorage.getItem(titleKey(dayKey));
     if (saved && saved.trim()) h.textContent = saved.trim();
@@ -218,20 +207,19 @@
       const current = localStorage.getItem(titleKey(dayKey)) || h.textContent;
       const input = window.prompt('タイトルを入力してください。', current);
       if (input === null) return;
-      const next = input.trim();
-      if (!next) return;
+      const next = input.trim(); if (!next) return;
       localStorage.setItem(titleKey(dayKey), next);
       h.textContent = next;
     });
 
-    // 行復元＋スロット再構成
+    // 復元＋行間スロット
     restoreRows(dayKey);
 
-    // sticky の top を算出
+    // stickyオフセット算出（マスク帯にも反映）
     setStickyOffsets();
   }
 
-  // ========= ルーティング初期化 =========
+  // ========= ルーティング =========
   function initRouting() {
     if (typeof window.route !== 'function' || typeof window.navigate !== 'function') {
       $('#view').textContent = 'router.js の読み込みに失敗しました';
@@ -246,19 +234,18 @@
 
   // ========= イベント =========
   let selectedCell = null;
-
   function initEvents() {
-    // クリック（追加・削除・セル選択・ツール・行間スワップ・配置ボタン）
+    // クリック（追加・削除・セル選択・ツール・行間スワップ・配置）
     $('#view').addEventListener('click', (e) => {
       const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
       const dayKey = getDayKeyFromHash();
 
-      // 区間/備考セルの選択 → 配置ボタンで変更可
+      // 区間/備考セル選択 → 配置ボタンで変更可
       const cell = t.closest('#rows .cell[contenteditable="true"]');
-      if (cell && cell.dataset && ALIGN_FIELDS.has(cell.dataset.field)) {
+      if (cell && cell.dataset && ['sectionTop','sectionBottom','notes'].includes(cell.dataset.field)) {
         if (selectedCell) selectedCell.style.outline = '';
         selectedCell = cell;
-        selectedCell.style.outline = '2px solid rgba(0,0,0,.3)'; // 視覚用（線色はUIなのでOK）
+        selectedCell.style.outline = '2px solid rgba(0,0,0,.3)';
         selectedCell.style.outlineOffset = '-2px';
       } else if (!t.closest('#inlineAlign')) {
         if (selectedCell) { selectedCell.style.outline = ''; selectedCell = null; }
@@ -274,20 +261,16 @@
       }
 
       // ツール（プレースホルダ）
-      const tools = t.closest('.row-tools');
-      if (tools) {
+      if (t.closest('.row-tools')) {
         e.preventDefault(); e.stopPropagation();
-        // 将来のメニュー挿入予定
         return;
       }
 
-      // 行間スワップ（⇅）
+      // 行間スワップ
       const swapBtn = t.closest('.swap-slot .row-swap');
       if (swapBtn) {
         e.preventDefault(); e.stopPropagation();
-        const rowsEl = $('#rows');
-        if (!rowsEl || !dayKey) return;
-
+        const rowsEl = $('#rows'); if (!rowsEl || !dayKey) return;
         const slot  = swapBtn.closest('.swap-slot');
         const upper = slot?.previousElementSibling;
         const lower = slot?.nextElementSibling;
@@ -295,84 +278,52 @@
         if (!upper.classList.contains('row-group')) return;
         if (!lower.classList.contains('row-group')) return;
 
-        // アクティブ列の保持
-        const activeCell = document.activeElement?.closest('.cell[data-field]');
-        const activeField = activeCell?.dataset?.field || null;
-
-        // lower を upper の前に → 上下入替
-        rowsEl.insertBefore(lower, upper);
-
+        const activeField = document.activeElement?.closest('.cell[data-field]')?.dataset?.field || null;
+        rowsEl.insertBefore(lower, upper);    // 上下入替
         rebuildSwapSlots();
-
-        if (activeField) {
-          const target = lower.querySelector(`.cell[data-field="${activeField}"]`);
-          target?.focus();
-        }
-
+        if (activeField) lower.querySelector(`.cell[data-field="${activeField}"]`)?.focus();
         saveRows(dayKey);
         return;
       }
 
       // 追加
-      const add = t.closest('#btnAddInline');
-      if (add) {
-        const rowsEl = $('#rows');
-        if (!rowsEl || !dayKey) return;
+      if (t.closest('#btnAddInline')) {
+        const rowsEl = $('#rows'); if (!rowsEl || !dayKey) return;
         rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
-        const last = rowsEl.lastElementChild;
-        last?.querySelector('[data-field="sectionTop"]')?.focus();
-        saveRows(dayKey);
-        rebuildSwapSlots();
-        setStickyOffsets(); // 念のため
+        rowsEl.lastElementChild?.querySelector('[data-field="sectionTop"]')?.focus();
+        saveRows(dayKey); rebuildSwapSlots(); setStickyOffsets();
         return;
       }
     });
 
-    // ヘッダー左の「書式（左/中/右）」ボタン
+    // 書式（左/中/右）
     document.body.addEventListener('click', (e) => {
-      const btn = e.target.closest('#inlineAlign button[data-align]');
-      if (!btn || !selectedCell) return;
-      const align = btn.dataset.align;
-      applyAlign(selectedCell, align);
-      const dayKey = getDayKeyFromHash();
-      if (dayKey) saveRows(dayKey);
+      const btn = e.target.closest('#inlineAlign button[data-align]'); if (!btn || !selectedCell) return;
+      applyAlign(selectedCell, btn.dataset.align);
+      const dayKey = getDayKeyFromHash(); if (dayKey) saveRows(dayKey);
     });
 
-    // 入力 → デバウンス保存
+    // 入力 → 保存
     $('#view').addEventListener('input', (e) => {
       if (!e.target.closest('#rows')) return;
-      const dayKey = getDayKeyFromHash();
-      if (!dayKey) return;
-      scheduleSave(dayKey);
+      const dayKey = getDayKeyFromHash(); if (!dayKey) return;
+      clearTimeout(saveTimer); saveTimer = setTimeout(() => saveRows(dayKey), 250);
     });
 
-    // Tab/Shift+Tab：次(前)セルへ移動し全選択
+    // Tab全選択
     $('#view').addEventListener('keydown', (e) => {
       if (e.key !== 'Tab') return;
-
-      const cell = e.target.closest('#rows .cell[contenteditable="true"]');
-      if (!cell) return;
-
+      const cell = e.target.closest('#rows .cell[contenteditable="true"]'); if (!cell) return;
       e.preventDefault();
-
       const list = Array.from(document.querySelectorAll('#rows .cell[contenteditable="true"]'));
-      const i = list.indexOf(cell);
-      if (i === -1) return;
-
-      const forward = !e.shiftKey;
-      const j = forward ? Math.min(i + 1, list.length - 1) : Math.max(i - 1, 0);
-      const next = list[j];
-      if (!next) return;
-
+      const i = list.indexOf(cell); if (i === -1) return;
+      const j = !e.shiftKey ? Math.min(i+1, list.length-1) : Math.max(i-1, 0);
+      const next = list[j]; if (!next) return;
       next.focus();
       setTimeout(() => {
-        const sel = window.getSelection();
-        const range = document.createRange();
-        range.selectNodeContents(next);
-        sel.removeAllRanges();
-        sel.addRange(range);
-
-        if (ALIGN_FIELDS.has(next.dataset.field)) {
+        const sel = window.getSelection(), range = document.createRange();
+        range.selectNodeContents(next); sel.removeAllRanges(); sel.addRange(range);
+        if (['sectionTop','sectionBottom','notes'].includes(next.dataset.field)) {
           if (selectedCell) selectedCell.style.outline = '';
           selectedCell = next;
           selectedCell.style.outline = '2px solid rgba(0,0,0,.3)';
@@ -380,19 +331,29 @@
         } else {
           if (selectedCell) { selectedCell.style.outline = ''; selectedCell = null; }
         }
-
-        const dayKey2 = getDayKeyFromHash();
-        if (dayKey2) scheduleSave(dayKey2);
       }, 0);
     });
 
-    // リサイズ時も再計算（アドレスバー縮み等に対応）
+    // リサイズでstickyオフセット再計算
     window.addEventListener('resize', setStickyOffsets);
   }
 
-  // ========= 起動 =========
+  // デバウンス保存
+  let saveTimer = null;
+
+  // ========= ルート起動 =========
+  function initRouting() {
+    if (typeof window.route !== 'function' || typeof window.navigate !== 'function') {
+      $('#view').textContent = 'router.js の読み込みに失敗しました'; return;
+    }
+    window.route('/cover',   () => renderCover());
+    window.route('/section', (rest) => renderSection(rest));
+    window.route('/404',     () => { $('#view').textContent = '404'; });
+    if (!location.hash) location.hash = '#/cover';
+    window.navigate();
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
-    initRouting();
-    initEvents();
+    initRouting(); initEvents();
   });
 })();
