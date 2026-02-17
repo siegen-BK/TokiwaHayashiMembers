@@ -60,13 +60,13 @@
   }
 
   // ========= Line（行）ユーティリティ =========
-  // エスケープ（※二重エスケープを起こさない正しい順）
+  // エスケープ（正しい順）
   const esc = (s) => (s || '')
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;');
 
-  // .cell 内の素の改行テキストを <span class="ln align-center">…</span> にラップ（既に .ln があれば何もしない）
+  // .cell の素テキストを .ln でラップ（既に .ln があれば触らない）
   function normalizeLines(cell) {
     if (cell.querySelector('.ln')) return;
     const raw = cell.innerText.replace(/\r/g, '');
@@ -74,8 +74,10 @@
     cell.innerHTML = lines.map(s => `<span class="ln align-center">${esc(s.trim())}</span>`).join('');
   }
 
-  // 既存 .ln の align を保持しつつ、innerText から再構成
   const _rebuildingCells = new WeakSet();
+  let enterCloneAlign = null; // Enter時の継承揃え
+
+  // 既存 .ln の揃えを保持しつつ再構成（Enter時の継承も考慮）
   function rebuildLines(cell) {
     if (_rebuildingCells.has(cell)) return;
     _rebuildingCells.add(cell);
@@ -89,14 +91,15 @@
     const text  = cell.innerText.replace(/\r/g,'');
     const lines = text.split('\n');
     cell.innerHTML = lines.map((s,i) => {
-      const a = prevAligns[i] || 'center';
+      const fallback = enterCloneAlign || prevAligns[i-1] || 'center';
+      const a = prevAligns[i] || fallback;
       return `<span class="ln align-${a}">${esc(s.trim())}</span>`;
     }).join('');
 
     _rebuildingCells.delete(cell);
   }
 
-  // .cell から [{t,a}, …] を取得（.ln 優先、無ければ1行）
+  // .cell -> [{t,a}]
   function getLinesFromCell(cell) {
     const lns = cell.querySelectorAll('.ln');
     if (lns.length) {
@@ -114,7 +117,7 @@
     }
   }
 
-  // [{t,a}] を .cell にレンダリング
+  // [{t,a}] -> .cell
   function setLinesToCell(cell, lines) {
     if (!lines || !lines.length) {
       cell.innerHTML = '';
@@ -123,7 +126,7 @@
     cell.innerHTML = lines.map(({t,a}) => `<span class="ln align-${a || 'center'}">${esc(t || '')}</span>`).join('');
   }
 
-  // キャレット位置から現在 .ln を取得
+  // キャレット位置の .ln
   function getCurrentLineInCell(cell) {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return null;
@@ -139,9 +142,7 @@
   }
 
   // ========= 保存・復元 =========
-  // 形式：
-  // - 新形式：{ lines:[ {t:'文字', a:'left|center|right'}, ... ], __flags? }
-  // - 旧形式：{ t:'文字', a:'...' } または '文字列'
+  // 形式：新 { lines:[{t,a},...] , __flags } / 旧 {t,a} / 旧 'text'
   function serializeRows() {
     const rowsEl = $('#rows');
     if (!rowsEl) return [];
@@ -149,9 +150,8 @@
       const obj = {};
       group.querySelectorAll('[data-field]').forEach(cell => {
         const lines = getLinesFromCell(cell);
-        obj[cell.dataset.field] = { lines }; // 空でも lines:[] で保持
+        obj[cell.dataset.field] = { lines };
       });
-      // 区間2段結合フラグ
       obj.__flags = { sectionMerged: group.classList.contains('merge-section') };
       return obj;
     });
@@ -179,13 +179,11 @@
       group.querySelectorAll('[data-field]').forEach(cell => {
         const v = rowObj[cell.dataset.field];
 
-        // 1) 新形式：行配列
         if (v && Array.isArray(v.lines)) {
           setLinesToCell(cell, v.lines);
           return;
         }
 
-        // 2) 旧形式：単一テキスト＋セル揃え or 純文字列
         let text = '';
         let align = 'center';
         if (typeof v === 'string') {
@@ -327,11 +325,47 @@
       const dayKey = getDayKeyFromHash && getDayKeyFromHash();
       if (!cell || !dayKey) return;
 
-      // 変換確定時に1回だけ行整形
+      // 変換確定時に1回だけ整形
       if (cell.querySelector('.ln')) rebuildLines(cell);
       else normalizeLines(cell);
 
       saveRows(dayKey);
+    });
+
+    // --- Enterの揃え継承（区間/備考のみ .ln を使うセル） ---
+    $('#view').addEventListener('keydown', (e) => {
+      const cell = e.target.closest(
+        '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
+        '#rows .cell[contenteditable="true"][data-field="sectionBottom"], ' +
+        '#rows .cell[contenteditable="true"][data-field="notes"]'
+      );
+      if (!cell) return;
+      if (isComposing) return;
+      if (e.key !== 'Enter') return;
+
+      const curLn = getCurrentLineInCell(cell) || cell.querySelector('.ln');
+      if (curLn) {
+        enterCloneAlign =
+          curLn.classList.contains('align-left')  ? 'left'  :
+          curLn.classList.contains('align-right') ? 'right' : 'center';
+      } else {
+        enterCloneAlign = null;
+      }
+
+      // 改行後に .ln 再構成＆新行に揃えを引き継ぐ
+      setTimeout(() => {
+        if (cell.querySelector('.ln')) rebuildLines(cell);
+        else normalizeLines(cell);
+
+        if (enterCloneAlign) {
+          const newLn = getCurrentLineInCell(cell) || cell.querySelector('.ln');
+          if (newLn) setLineAlign(newLn, enterCloneAlign);
+        }
+
+        const dayKey2 = getDayKeyFromHash && getDayKeyFromHash();
+        if (dayKey2) saveRows(dayKey2);
+        enterCloneAlign = null;
+      }, 0);
     });
 
     // クリック（追加・削除・区間結合・行選択）
@@ -339,29 +373,24 @@
       const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
       const dayKey = getDayKeyFromHash();
 
-      // 0) 区間セル（Top/Bottom）・備考セル → 行選択＆ツールバー表示
-      const targetEditableCell = t.closest(
+      // 区間/備考セル → 行選択＆ツールバー表示
+      const editable = t.closest(
         '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
         '#rows .cell[contenteditable="true"][data-field="sectionBottom"], ' +
         '#rows .cell[contenteditable="true"][data-field="notes"]'
       );
-      if (targetEditableCell) {
-        // 初回は行ラップを作る
-        normalizeLines(targetEditableCell);
-
-        // 現在キャレットの行を選択
-        const ln = getCurrentLineInCell(targetEditableCell) || targetEditableCell.querySelector('.ln');
+      if (editable) {
+        normalizeLines(editable);
+        const ln = getCurrentLineInCell(editable) || editable.querySelector('.ln');
         if (selectedLine) selectedLine.classList.remove('is-selected');
         selectedLine = ln;
         if (selectedLine) selectedLine.classList.add('is-selected');
-
-        // ツールバー表示
         const tb = document.getElementById('alignToolbar');
         if (tb) tb.classList.remove('hidden');
         return;
       }
 
-      // 1) 区間 結合/解除 トグル
+      // 区間 結合/解除
       const mergeBtn = t.closest('.row-merge');
       if (mergeBtn) {
         e.preventDefault();
@@ -374,13 +403,11 @@
         const mergedNow = group.classList.toggle('merge-section');
 
         if (mergedNow) {
-          // 結合：TopLines + BottomLines → Top、Bottom は空
           const topLines    = getLinesFromCell(top);
           const bottomLines = getLinesFromCell(bottom);
           setLinesToCell(top, [...topLines, ...bottomLines]);
           setLinesToCell(bottom, []);
         } else {
-          // 解除：Top を 1行目→Top、2行目以降→Bottom
           const lines = getLinesFromCell(top);
           const first = lines[0] ? [lines[0]] : [];
           const rest  = lines.slice(1);
@@ -392,7 +419,7 @@
         return;
       }
 
-      // 2) 行削除
+      // 行削除
       const del = t.closest('.row-del');
       if (del) {
         e.preventDefault();
@@ -402,22 +429,19 @@
         return;
       }
 
-      // 3) 行追加
+      // 行追加
       const add = t.closest('#btnAddInline');
       if (add) {
         const rowsEl = $('#rows');
         if (!rowsEl || !dayKey) return;
         rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
-
-        // 追加した行の最初セルへフォーカス
         const last = rowsEl.lastElementChild;
         last?.querySelector('[data-field="sectionTop"]')?.focus();
-
         saveRows(dayKey);
         return;
       }
 
-      // 4) その他 → ツールバーを隠す＆選択解除
+      // ツールバー閉じる
       if (!t.closest('#alignToolbar')) {
         const tb = document.getElementById('alignToolbar');
         if (tb) tb.classList.add('hidden');
@@ -428,7 +452,7 @@
 
     // 入力（contenteditable） → 行ラップ再構成＋保存
     $('#view').addEventListener('input', (e) => {
-      if (isComposing) return; // IME変換中は組み替えない
+      if (isComposing) return; // 変換中は組み替えない
 
       const cell = e.target.closest(
         '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
@@ -438,7 +462,6 @@
       const dayKey = getDayKeyFromHash();
       if (!cell || !dayKey) return;
 
-      // .ln が無ければ作成、あれば align を保持して再構成
       if (cell.querySelector('.ln')) {
         rebuildLines(cell);
       } else {
@@ -448,7 +471,7 @@
       scheduleSave(dayKey);
     });
 
-    // 右下ツールバーで「左/中/右」を適用
+    // 右下ツールバー：左/中/右
     document.body.addEventListener('click', (e) => {
       const btn = e.target.closest('#alignToolbar button[data-align]');
       if (!btn || !selectedLine) return;
@@ -456,7 +479,6 @@
       const align = btn.dataset.align;
       setLineAlign(selectedLine, align);
 
-      // 即保存
       const dayKey = getDayKeyFromHash();
       if (dayKey) saveRows(dayKey);
     });
