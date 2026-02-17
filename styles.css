@@ -10,12 +10,13 @@
   --col-notes:   1.4fr; /* 備考 */
 
   /* 行の高さ（2段構成の基準） */
-  --h-unit: 36px;             /* 1段の高さ */
-  --header-h: calc(var(--h-unit) / 2);   /* 先頭行は半分の高さ */
+  --h-unit: 36px;               /* 1段の高さ */
+  --header-h: calc(var(--h-unit) / 2); /* 先頭行は半分の高さ */
 
-  /* sticky の top（JSで算出して代入） */
-  --sticky-top-toolbar: 0px;  /* タブ直下にツールバー */
-  --sticky-top-header:  0px;  /* ツールバー直下に先頭行 */
+  /* sticky の top（JS で算出して代入） */
+  --sticky-top-appheader: 0px;  /* タブ(アプリヘッダ) */
+  --sticky-top-toolbar:   0px;  /* タブ直下にツールバー */
+  --sticky-top-tablehead: 0px;  /* ツールバー直下に先頭行 */
 }
 
 *{ box-sizing:border-box; }
@@ -27,8 +28,12 @@ body{
   background:var(--bg);
 }
 
-/* ===== タブ行（固定しない／ページ最上段） ===== */
+/* ===== ① タブ（アプリヘッダ）：最上段に sticky 固定 ===== */
 .app-header{
+  position: sticky;
+  top: 0;                     /* 画面最上段に張り付く */
+  z-index: 60;
+  background:#fff;            /* 透け防止 */
   border-bottom:1px solid #eee;
   padding:12px 16px;
 }
@@ -61,25 +66,23 @@ main{
 
 .note{ color:var(--muted); }
 
-/* ===== タイトル＆ボタン行（左上固定：タブ直下） ===== */
+/* ===== ② タイトル＆ボタン行（タブ直下に sticky 固定） ===== */
 .section-toolbar{
-  position: sticky;                     /* ← 固定する */
-  top: var(--sticky-top-toolbar);       /* タブの直下まで下げる（JSで算出） */
-  z-index: 30;
-  background: #fff;                     /* 下の罫線が透けない */
-  border-bottom: 1px solid var(--grid);
+  position: sticky;
+  top: var(--sticky-top-toolbar);     /* JS でタブ高を反映 */
+  z-index: 50;
+  background:#fff;                    /* 透け防止 */
+  border-bottom:1px solid var(--grid);
 
-  max-width: 960px;
-  margin: 0 auto;                       /* タイトルの中央を表幅に合わせる */
-  min-height: 44px;
+  max-width:960px;
+  margin:0 auto;
+  min-height:44px;                    /* タイトルの高さ確保 */
 }
-
-/* 左側：書式ボタン＆＋追加（ツールバー左・縦中央） */
 .toolbar-left{
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  position:absolute;
+  left:0;
+  top:50%;
+  transform:translateY(-50%);
   display:flex;
   gap:8px;
   align-items:center;
@@ -98,7 +101,7 @@ main{
 
 /* タイトルは表の幅に対して中央 */
 .sheet-title{
-  margin:8px 0;               /* わずかに余白 */
+  margin:8px 0;
   text-align:center;
   font-size:28px;
   font-weight:700;
@@ -118,9 +121,7 @@ main{
     var(--col-notes);
 }
 
-/* ---- 先頭行（ヘッダ） ----
-   ツールバー直下に sticky 固定
-*/
+/* ===== ③ 先頭行（表ヘッダ）：ツールバー直下に sticky 固定 ===== */
 .first-row-table{
   display:grid;
   border-top:1px solid var(--grid);
@@ -132,14 +133,11 @@ main{
   row-gap:0;
 
   position: sticky;
-  top: var(--sticky-top-header);  /* ツールバー高さぶん下げる（JSで算出） */
-  z-index: 20;
-
-  /* 下の行の罫線が透けないよう白 */
-  background:#fff;
+  top: var(--sticky-top-tablehead);   /* JS でタブ＋ツールバー高を反映 */
+  z-index: 40;
+  background:#fff;                    /* 透け防止 */
 }
 
-/* ヘッダセル：全セルに下線、縦線は「最後以外」、高さは半分 */
 .first-row-table .cell{
   border-bottom:1px solid var(--grid);
   padding:0 12px;
@@ -157,14 +155,14 @@ main{
   border-right:1px solid var(--grid);
 }
 
-/* ---- 行群（追加行のまとまり） ---- */
+/* ---- データ行群（スクロールで動くのはここだけ） ---- */
 .rows{
   border-left:1px solid var(--grid);
   border-right:1px solid var(--grid);
   margin-top:0;
 }
 
-/* ---- 追加行（1行＝2段グリッド） ---- */
+/* 1行＝2段グリッド */
 .row-group{
   display:grid;
   grid-template-rows: 1fr 1fr;
