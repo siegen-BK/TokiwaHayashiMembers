@@ -33,9 +33,12 @@
   function applyAlign(cell, align) {
     cell.classList.remove('align-left','align-center','align-right');
     cell.classList.add(`align-${align}`);
-    cell.style.textAlign = (align === 'left') ? 'left' : (align === 'right') ? 'right' : 'center';
-    cell.style.justifyContent = (align === 'left') ? 'flex-start' :
-                                (align === 'right') ? 'flex-end'   : 'center';
+    cell.style.textAlign =
+      align === 'left'  ? 'left'  :
+      align === 'right' ? 'right' : 'center';
+    cell.style.justifyContent =
+      align === 'left'  ? 'flex-start' :
+      align === 'right' ? 'flex-end'   : 'center';
     cell.dataset.align = align;
   }
   function getAlign(cell) {
@@ -160,7 +163,7 @@
     // ツールバーはタブ直下
     document.documentElement.style.setProperty('--sticky-top-toolbar', `${appH}px`);
 
-    // ツールバー高さ（レイアウト後値）
+    // ツールバー高さ（レイアウト後）
     const toolbarH = document.querySelector('.section-toolbar')?.offsetHeight || 0;
 
     // 先頭行はタブ＋ツールバー直下
@@ -201,7 +204,7 @@
           <div class="cell" role="columnheader">備考</div>
         </div>
 
-        <!-- 以降の行（ここだけスクロールで動く） -->
+        <!-- 以降の行 -->
         <div id="rows" class="rows"></div>
       </section>
     `;
@@ -255,7 +258,7 @@
       if (cell && cell.dataset && ALIGN_FIELDS.has(cell.dataset.field)) {
         if (selectedCell) selectedCell.style.outline = '';
         selectedCell = cell;
-        selectedCell.style.outline = '2px solid #0a7cff55';
+        selectedCell.style.outline = '2px solid rgba(0,0,0,.3)'; // 視覚用（線色はUIなのでOK）
         selectedCell.style.outlineOffset = '-2px';
       } else if (!t.closest('#inlineAlign')) {
         if (selectedCell) { selectedCell.style.outline = ''; selectedCell = null; }
@@ -320,7 +323,7 @@
         last?.querySelector('[data-field="sectionTop"]')?.focus();
         saveRows(dayKey);
         rebuildSwapSlots();
-        setStickyOffsets(); // 念のため（高さが変わった場合）
+        setStickyOffsets(); // 念のため
         return;
       }
     });
@@ -369,11 +372,10 @@
         sel.removeAllRanges();
         sel.addRange(range);
 
-        // 選択見た目（区間/備考のみ）
         if (ALIGN_FIELDS.has(next.dataset.field)) {
           if (selectedCell) selectedCell.style.outline = '';
           selectedCell = next;
-          selectedCell.style.outline = '2px solid #0a7cff55';
+          selectedCell.style.outline = '2px solid rgba(0,0,0,.3)';
           selectedCell.style.outlineOffset = '-2px';
         } else {
           if (selectedCell) { selectedCell.style.outline = ''; selectedCell = null; }
@@ -384,7 +386,7 @@
       }, 0);
     });
 
-    // ウィンドウリサイズ時に sticky の top を再算出
+    // リサイズ時も再計算（アドレスバー縮み等に対応）
     window.addEventListener('resize', setStickyOffsets);
   }
 
