@@ -31,7 +31,7 @@
   function rowTemplate() {
     return `
       <div class="row-group" role="rowgroup" aria-label="データ行">
-        <!-- 区間・場所（上下2段）＝フリー入力＆行ごと揃え -->
+        <!-- 区間・場所（上下2段） -->
         <div class="cell" style="grid-column:1; grid-row:1;" contenteditable="true" data-field="sectionTop"></div>
         <div class="cell" style="grid-column:1; grid-row:2;" contenteditable="true" data-field="sectionBottom"></div>
 
@@ -48,156 +48,24 @@
         <div class="cell" style="grid-column:6; grid-row:1;" contenteditable="true" data-field="fueTop"></div>
         <div class="cell split-top" style="grid-column:6; grid-row:2;" contenteditable="true" data-field="fueBottom"></div>
 
-        <!-- 備考（2段ぶち抜き）＝フリー入力＆行ごと揃え -->
+        <!-- 備考（2段ぶち抜き） -->
         <div class="cell span2" style="grid-column:7; grid-row:1 / span 2;" contenteditable="true" data-field="notes"></div>
 
         <!-- 行削除（右余白） -->
-        <button class="row-del"   type="button" title="この行を削除">🗑</button>
-        <!-- 区間 2段結合/解除（左余白） -->
-        <button class="row-merge" type="button" title="区間を2段結合/解除">⇅</button>
+        <button class="row-del" type="button" title="この行を削除">🗑</button>
       </div>
     `;
   }
 
-  // ========= Line（行）ユーティリティ =========
-  // エスケープ（正しい順）
-  const esc = (s) => (s || '')
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;');
-
-  // .cell の素テキストを .ln でラップ（既に .ln があれば触らない）
-  function normalizeLines(cell) {
-    if (cell.querySelector('.ln')) return;
-    const raw = cell.innerText.replace(/\r/g, '');
-    const lines = raw.split('\n');
-    cell.innerHTML = lines.map(s => `<span class="ln align-center">${esc(s.trim())}</span>`).join('');
-  }
-
-  const _rebuildingCells = new WeakSet();
-  let enterCloneAlign = null;  // Enter時の継承揃え
-  let skipNextRebuild = false; // Enter直後のinputでrebuildしない
-
-  // 既存 .ln の揃えを保持しつつ再構成（Enter継承も考慮）
-  function rebuildLines(cell) {
-    if (_rebuildingCells.has(cell)) return;
-    _rebuildingCells.add(cell);
-
-    const prevAligns = Array.from(cell.querySelectorAll('.ln')).map(ln => {
-      if (ln.classList.contains('align-left'))  return 'left';
-      if (ln.classList.contains('align-right')) return 'right';
-      return 'center';
-    });
-
-    const text  = cell.innerText.replace(/\r/g,'');
-    const lines = text.split('\n');
-    cell.innerHTML = lines.map((s,i) => {
-      const fallback = enterCloneAlign || prevAligns[i-1] || 'center';
-      const a = prevAligns[i] || fallback;
-      return `<span class="ln align-${a}">${esc(s.trim())}</span>`;
-    }).join('');
-
-    _rebuildingCells.delete(cell);
-  }
-
-  // .cell -> [{t,a}]
-  function getLinesFromCell(cell) {
-    const lns = cell.querySelectorAll('.ln');
-    if (lns.length) {
-      return Array.from(lns).map(ln => ({
-        t: (ln.textContent || '').trim(),
-        a: ln.classList.contains('align-left') ? 'left' :
-           ln.classList.contains('align-right') ? 'right' : 'center'
-      }));
-    } else {
-      const t = (cell.textContent || '').trim();
-      const a =
-        cell.classList.contains('align-left') ? 'left' :
-        cell.classList.contains('align-right') ? 'right' : 'center';
-      return t ? [{ t, a }] : [];
-    }
-  }
-
-  // [{t,a}] -> .cell
-  function setLinesToCell(cell, lines) {
-    if (!lines || !lines.length) {
-      cell.innerHTML = '';
-      return;
-    }
-    cell.innerHTML = lines.map(({t,a}) => `<span class="ln align-${a || 'center'}">${esc(t || '')}</span>`).join('');
-  }
-
-  // キャレット位置の .ln
-  function getCurrentLineInCell(cell) {
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return null;
-    let node = sel.anchorNode;
-    if (!node) return null;
-    if (node.nodeType === 3) node = node.parentElement;
-    return node.closest('.ln');
-  }
-
-  // キャレットを要素の末尾へ
-  function placeCaretAtEnd(el) {
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    range.collapse(false);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
-
-  function setLineAlign(ln, align) {
-    ln.classList.remove('align-left','align-center','align-right');
-    ln.classList.add(`align-${align}`);
-  }
-
-  // === 編集対象セレクタ ===
-  const EDITABLE_LN_SEL =
-    '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
-    '#rows .cell[contenteditable="true"][data-field="sectionBottom"], ' +
-    '#rows .cell[contenteditable="true"][data-field="notes"]';
-
-  const EDITABLE_ALL_SEL =
-    EDITABLE_LN_SEL + ', ' +
-    '#rows .cell[contenteditable="true"][data-field="daido"], ' +
-    '#rows .cell[contenteditable="true"][data-field="chudo"], ' +
-    '#rows .cell[contenteditable="true"][data-field="sokudo"], ' +
-    '#rows .cell[contenteditable="true"][data-field="kaneTop"], ' +
-    '#rows .cell[contenteditable="true"][data-field="kaneBottom"], ' +
-    '#rows .cell[contenteditable="true"][data-field="fueTop"], ' +
-    '#rows .cell[contenteditable="true"][data-field="fueBottom"]';
-
-  // セル内容を全選択
-  function selectAllInCell(cell){
-    if (!cell) return;
-    const sel = window.getSelection();
-    const range = document.createRange();
-    range.selectNodeContents(cell);
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
-
-  // Tab 用：隣の編集セル
-  function findSiblingEditableCell(current, forward = true){
-    const list = Array.from(document.querySelectorAll(EDITABLE_ALL_SEL));
-    const i = list.indexOf(current);
-    if (i === -1) return null;
-    const j = forward ? Math.min(i + 1, list.length - 1) : Math.max(i - 1, 0);
-    return list[j] || null;
-  }
-
-  // ========= 保存・復元 =========
+  // ========= 保存・復元（プレーンテキストのみ） =========
   function serializeRows() {
     const rowsEl = $('#rows');
     if (!rowsEl) return [];
     return Array.from(rowsEl.querySelectorAll('.row-group')).map(group => {
       const obj = {};
       group.querySelectorAll('[data-field]').forEach(cell => {
-        const lines = getLinesFromCell(cell);
-        obj[cell.dataset.field] = { lines };
+        obj[cell.dataset.field] = (cell.textContent || '').trim();
       });
-      obj.__flags = { sectionMerged: group.classList.contains('merge-section') };
       return obj;
     });
   }
@@ -220,40 +88,10 @@
     for (const rowObj of data) {
       rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
       const group = rowsEl.lastElementChild;
-
       group.querySelectorAll('[data-field]').forEach(cell => {
         const v = rowObj[cell.dataset.field];
-
-        if (v && Array.isArray(v.lines)) {
-          setLinesToCell(cell, v.lines);
-          return;
-        }
-
-        let text = '';
-        let align = 'center';
-        if (typeof v === 'string') {
-          text = v;
-        } else if (v && typeof v === 'object') {
-          text  = v.t || '';
-          align = v.a || 'center';
-        }
-        if (text) {
-          setLinesToCell(cell, [{ t: text, a: align }]);
-        } else {
-          cell.innerHTML = '';
-        }
+        if (v) cell.textContent = v;
       });
-
-      const merged = rowObj.__flags && rowObj.__flags.sectionMerged;
-      if (merged) {
-        const top    = group.querySelector('[data-field="sectionTop"]');
-        const bottom = group.querySelector('[data-field="sectionBottom"]');
-        const topLines    = getLinesFromCell(top);
-        const bottomLines = getLinesFromCell(bottom);
-        setLinesToCell(top, [...topLines, ...bottomLines]);
-        setLinesToCell(bottom, []);
-        group.classList.add('merge-section');
-      }
     }
   }
 
@@ -264,8 +102,150 @@
     saveTimer = setTimeout(() => saveRows(dayKey), 250);
   }
 
-  // ========= 右下の「文字揃え」ツールバー =========
-  function ensureAlignToolbar() {
-    if (document.getElementById('alignToolbar')) return;
-    const tb = document.createElement('div');
-    tb.id = 'alignToolbar';
+  // ========= 描画 =========
+  function renderCover() {
+    $('#view').innerHTML = '<section><h2>表紙</h2></section>';
+  }
+
+  function renderSection(rest) {
+    const dayKey = (rest || DEFAULT_DAY).toLowerCase();
+    const titleDefault = TITLE_BY_DAY[dayKey] || TITLE_BY_DAY[DEFAULT_DAY];
+
+    $('#view').innerHTML = `
+      <section>
+        <div class="section-header">
+          <button id="btnAddInline" class="btn-add" type="button" title="このページに要素を追加">＋ 追加</button>
+          <h2 id="sectionTitleHeading" title="クリックで編集">${titleDefault}</h2>
+        </div>
+
+        <div class="first-row-table" role="table" aria-label="固定先頭行（区間・楽器）">
+          <div class="cell" role="columnheader">区間・場所</div>
+          <div class="cell" role="columnheader">大胴</div>
+          <div class="cell" role="columnheader">中胴</div>
+          <div class="cell" role="columnheader">側胴</div>
+          <div class="cell" role="columnheader">鉦</div>
+          <div class="cell" role="columnheader">笛</div>
+          <div class="cell" role="columnheader">備考</div>
+        </div>
+
+        <div id="rows" class="rows"></div>
+      </section>
+    `;
+
+    // タイトル復元＆編集
+    const h = $('#sectionTitleHeading');
+    const saved = localStorage.getItem(titleKey(dayKey));
+    if (saved && saved.trim()) h.textContent = saved.trim();
+
+    h.style.cursor = 'pointer';
+    h.addEventListener('click', () => {
+      const current = localStorage.getItem(titleKey(dayKey)) || h.textContent;
+      const input = window.prompt('タイトルを入力してください。', current);
+      if (input === null) return;
+      const next = input.trim();
+      if (!next) return;
+      localStorage.setItem(titleKey(dayKey), next);
+      h.textContent = next;
+    });
+
+    // 行復元
+    restoreRows(dayKey);
+  }
+
+  // ========= ルーティング初期化 =========
+  function initRouting() {
+    if (typeof window.route !== 'function' || typeof window.navigate !== 'function') {
+      $('#view').textContent = 'router.js の読み込みに失敗しました';
+      return;
+    }
+    window.route('/cover',   () => renderCover());
+    window.route('/section', (rest) => renderSection(rest));
+    window.route('/404',     () => { $('#view').textContent = '404'; });
+    if (!location.hash) location.hash = '#/cover';
+    window.navigate();
+  }
+
+  // ========= クリック＆入力・Tab全選択 =========
+  function initEvents() {
+    // 追加/削除
+    $('#view').addEventListener('click', (e) => {
+      const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
+      const dayKey = getDayKeyFromHash();
+
+      // 行削除
+      const del = t.closest('.row-del');
+      if (del) {
+        e.preventDefault();
+        e.stopPropagation();
+        del.closest('.row-group')?.remove();
+        if (dayKey) saveRows(dayKey);
+        return;
+      }
+
+      // 行追加
+      const add = t.closest('#btnAddInline');
+      if (add) {
+        const rowsEl = $('#rows');
+        if (!rowsEl || !dayKey) return;
+        rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
+
+        // 追加直後は先頭セルにフォーカス
+        const last = rowsEl.lastElementChild;
+        last?.querySelector('[data-field="sectionTop"]')?.focus();
+
+        saveRows(dayKey);
+        return;
+      }
+    });
+
+    // 入力 → デバウンス保存（プレーン）
+    $('#view').addEventListener('input', (e) => {
+      if (!e.target.closest('#rows')) return;
+      const dayKey = getDayKeyFromHash();
+      if (!dayKey) return;
+      scheduleSave(dayKey);
+    });
+
+    // Tab/Shift+Tab：次(前)の編集セルへ移動し、全選択だけ行う
+    $('#view').addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+
+      const cell = e.target.closest('#rows .cell[contenteditable="true"]');
+      if (!cell) return;
+
+      e.preventDefault(); // 既定のフォーカス移動を止める
+
+      const list = Array.from(document.querySelectorAll('#rows .cell[contenteditable="true"]'));
+      const i = list.indexOf(cell);
+      if (i === -1) return;
+
+      const forward = !e.shiftKey;
+      const j = forward ? Math.min(i + 1, list.length - 1) : Math.max(i - 1, 0);
+      const next = list[j];
+      if (!next) return;
+
+      next.focus();
+      // DOM反映後に全選択
+      setTimeout(() => {
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(next);
+        sel.removeAllRanges();
+        sel.addRange(range);
+
+        // 任意：保存のきっかけにしておく
+        const dayKey = getDayKeyFromHash();
+        if (dayKey) scheduleSave(dayKey);
+      }, 0);
+    });
+
+    // 印刷
+    document.getElementById('btnPrint')?.addEventListener('click', () => window.print());
+  }
+
+  // ========= 起動 =========
+  document.addEventListener('DOMContentLoaded', () => {
+    initRouting();
+    initEvents();
+  });
+})();
