@@ -20,12 +20,8 @@
     return (k === 'd1' || k === 'd2' || k === 'd3') ? k : DEFAULT_DAY;
   }
 
-  function titleKey(dayKey) {
-    return `${STORAGE_PREFIX}title:${dayKey}`;
-  }
-  function rowsKey(dayKey) {
-    return `${STORAGE_PREFIX}rows:${dayKey}`;
-  }
+  function titleKey(dayKey) { return `${STORAGE_PREFIX}title:${dayKey}`; }
+  function rowsKey(dayKey)  { return `${STORAGE_PREFIX}rows:${dayKey}`; }
 
   function safeJsonParse(text, fallback) {
     try { return JSON.parse(text); } catch { return fallback; }
@@ -35,7 +31,7 @@
   function rowTemplate() {
     return `
       <div class="row-group" role="rowgroup" aria-label="データ行">
-        <!-- 区間・場所（上下2段） -->
+        <!-- 区間・場所（上下2段）＝フリー入力＆行ごと揃え -->
         <div class="cell" style="grid-column:1; grid-row:1;" contenteditable="true" data-field="sectionTop"></div>
         <div class="cell" style="grid-column:1; grid-row:2;" contenteditable="true" data-field="sectionBottom"></div>
 
@@ -52,7 +48,7 @@
         <div class="cell" style="grid-column:6; grid-row:1;" contenteditable="true" data-field="fueTop"></div>
         <div class="cell split-top" style="grid-column:6; grid-row:2;" contenteditable="true" data-field="fueBottom"></div>
 
-        <!-- 備考（2段ぶち抜き） -->
+        <!-- 備考（2段ぶち抜き）＝フリー入力＆行ごと揃え -->
         <div class="cell span2" style="grid-column:7; grid-row:1 / span 2;" contenteditable="true" data-field="notes"></div>
 
         <!-- 行削除 -->
@@ -61,14 +57,92 @@
     `;
   }
 
+  // ========= Line（行）ユーティリティ =========
+  // .cell 内を <span class="ln"> 行 にラップ（初回のみ・既に .ln があれば触らない）
+  function normalizeLines(cell) {
+    if (cell.querySelector('.ln')) return; // 既に行ラップ済みなら何もしない
+    const raw = cell.innerText.replace(/\r/g, '');
+    const lines = raw.split('\n');
+    const html = lines.map(s => {
+      const esc = s
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;');
+      // 初期は中央揃え
+      return `<span class="ln align-center">${esc}</span>`;
+    }).join('');
+    cell.innerHTML = html;
+  }
+
+  // 既存 .ln の align をできるだけ保持しつつ、cell.innerText を行ラップに再構成
+  const _rebuildingCells = new WeakSet();
+  function rebuildLines(cell) {
+    if (_rebuildingCells.has(cell)) return;
+    _rebuildingCells.add(cell);
+
+    const prevAligns = Array.from(cell.querySelectorAll('.ln')).map(ln => {
+      if (ln.classList.contains('align-left')) return 'left';
+      if (ln.classList.contains('align-right')) return 'right';
+      return 'center';
+    });
+
+    const text = cell.innerText.replace(/\r/g,'');
+    const lines = text.split('\n');
+    const html = lines.map((s,i) => {
+      const a = prevAligns[i] || 'center';
+      const esc = s
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;');
+      return `<span class="ln align-${a}">${esc}</span>`;
+    }).join('');
+    cell.innerHTML = html;
+
+    _rebuildingCells.delete(cell);
+  }
+
+  // キャレット位置から現在 .ln を取得
+  function getCurrentLineInCell(cell) {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return null;
+    let node = sel.anchorNode;
+    if (!node) return null;
+    if (node.nodeType === 3) node = node.parentElement;
+    return node.closest('.ln');
+  }
+
+  function setLineAlign(ln, align) {
+    ln.classList.remove('align-left','align-center','align-right');
+    ln.classList.add(`align-${align}`);
+  }
+
   // ========= 保存・復元 =========
+  // 形式：
+  // - 新形式：{ lines:[ {t:'文字', a:'left|center|right'}, ... ] }
+  // - 旧形式：{ t:'文字', a:'...' } または '文字列'
   function serializeRows() {
     const rowsEl = $('#rows');
     if (!rowsEl) return [];
     return Array.from(rowsEl.querySelectorAll('.row-group')).map(group => {
       const obj = {};
       group.querySelectorAll('[data-field]').forEach(cell => {
-        obj[cell.dataset.field] = (cell.textContent || '').trim();
+        const lns = cell.querySelectorAll('.ln');
+        if (lns.length) {
+          obj[cell.dataset.field] = {
+            lines: Array.from(lns).map(ln => ({
+              t: (ln.textContent || '').trim(),
+              a: ln.classList.contains('align-left') ? 'left' :
+                 ln.classList.contains('align-right') ? 'right' : 'center'
+            }))
+          };
+        } else {
+          // .ln が無いセルは従来形式で保存
+          const text = (cell.textContent || '').trim();
+          const align =
+            cell.classList.contains('align-left') ? 'left' :
+            cell.classList.contains('align-right') ? 'right' : 'center';
+          obj[cell.dataset.field] = { t: text, a: align };
+        }
       });
       return obj;
     });
@@ -92,9 +166,43 @@
     for (const rowObj of data) {
       rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
       const group = rowsEl.lastElementChild;
+
       group.querySelectorAll('[data-field]').forEach(cell => {
         const v = rowObj[cell.dataset.field];
-        if (v) cell.textContent = v;
+
+        // 1) 新形式：行配列
+        if (v && Array.isArray(v.lines)) {
+          const html = v.lines.map(item => {
+            const t = (item.t || '')
+              .replace(/&/g,'&amp;')
+              .replace(/</g,'&lt;')
+              .replace(/>/g,'&gt;');
+            const a = item.a || 'center';
+            return `<span class="ln align-${a}">${t}</span>`;
+          }).join('');
+          cell.innerHTML = html;
+          return;
+        }
+
+        // 2) 旧形式：単一テキスト＋セル揃え or 純文字列
+        let text = '';
+        let align = 'center';
+        if (typeof v === 'string') {
+          text = v;
+        } else if (v && typeof v === 'object') {
+          text  = v.t || '';
+          align = v.a || 'center';
+        }
+
+        if (text) {
+          const esc = text
+            .replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;');
+          cell.innerHTML = `<span class="ln align-${align}">${esc}</span>`;
+        } else {
+          cell.innerHTML = '';
+        }
       });
     }
   }
@@ -104,6 +212,20 @@
   function scheduleSave(dayKey) {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => saveRows(dayKey), 250);
+  }
+
+  // ========= 右下の「文字揃え」ツールバー =========
+  function ensureAlignToolbar() {
+    if (document.getElementById('alignToolbar')) return;
+    const tb = document.createElement('div');
+    tb.id = 'alignToolbar';
+    tb.className = 'align-toolbar hidden';
+    tb.innerHTML = `
+      <button type="button" data-align="left">左</button>
+      <button type="button" data-align="center">中</button>
+      <button type="button" data-align="right">右</button>
+    `;
+    document.body.appendChild(tb);
   }
 
   // ========= 描画 =========
@@ -154,6 +276,9 @@
 
     // 行データ復元
     restoreRows(dayKey);
+
+    // ツールバー用DOMを1回だけ用意
+    ensureAlignToolbar();
   }
 
   // ========= ルーティング初期化 =========
@@ -173,13 +298,38 @@
   }
 
   // ========= クリック＆入力（委譲1本） =========
+  let selectedLine = null; // 現在選択中の .ln
+
   function initEvents() {
-    // 追加/削除
+    // クリック（追加・削除・行選択）
     $('#view').addEventListener('click', (e) => {
       const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
       const dayKey = getDayKeyFromHash();
 
-      // 削除
+      // 1) 区間/備考セル内でクリック → 行選択＆ツールバー表示
+      const targetEditableCell = t.closest(
+        '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
+        '#rows .cell[contenteditable="true"][data-field="sectionBottom"], ' +
+        '#rows .cell[contenteditable="true"][data-field="notes"]'
+      );
+      if (targetEditableCell) {
+        // 初回は行ラップを作る
+        normalizeLines(targetEditableCell);
+
+        // 現在キャレットの行を選択
+        const ln = getCurrentLineInCell(targetEditableCell) || targetEditableCell.querySelector('.ln');
+        if (selectedLine) selectedLine.classList.remove('is-selected');
+        selectedLine = ln;
+        if (selectedLine) selectedLine.classList.add('is-selected');
+
+        // ツールバー表示
+        const tb = document.getElementById('alignToolbar');
+        if (tb) tb.classList.remove('hidden');
+
+        return;
+      }
+
+      // 2) 行削除
       const del = t.closest('.row-del');
       if (del) {
         e.preventDefault();
@@ -189,28 +339,62 @@
         return;
       }
 
-      // 追加
+      // 3) 行追加
       const add = t.closest('#btnAddInline');
       if (add) {
         const rowsEl = $('#rows');
         if (!rowsEl || !dayKey) return;
         rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
 
-        // 追加した行の最初セルへフォーカス（任意）
+        // 追加した行の最初セルへフォーカス
         const last = rowsEl.lastElementChild;
         last?.querySelector('[data-field="sectionTop"]')?.focus();
 
         saveRows(dayKey);
         return;
       }
+
+      // 4) その他をクリック → ツールバーを隠す＆選択解除
+      if (!t.closest('#alignToolbar')) {
+        const tb = document.getElementById('alignToolbar');
+        if (tb) tb.classList.add('hidden');
+        if (selectedLine) selectedLine.classList.remove('is-selected');
+        selectedLine = null;
+      }
     });
 
-    // 編集入力 → デバウンス保存
+    // 入力（contenteditable） → 行ラップ再構成＋保存
     $('#view').addEventListener('input', (e) => {
-      if (!e.target.closest('#rows')) return;
+      const cell = e.target.closest(
+        '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
+        '#rows .cell[contenteditable="true"][data-field="sectionBottom"], ' +
+        '#rows .cell[contenteditable="true"][data-field="notes"]'
+      );
       const dayKey = getDayKeyFromHash();
-      if (!dayKey) return;
+      if (!cell || !dayKey) return;
+
+      // .ln が無ければ作成、あれば align を保持して再構成
+      if (cell.querySelector('.ln')) {
+        rebuildLines(cell);
+      } else {
+        normalizeLines(cell);
+      }
+
       scheduleSave(dayKey);
+    });
+
+    // 右下ツールバーで「左/中/右」を適用
+    document.body.addEventListener('click', (e) => {
+      const btn = e.target.closest('#alignToolbar button[data-align]');
+      if (!btn) return;
+      if (!selectedLine) return;
+
+      const align = btn.dataset.align;
+      setLineAlign(selectedLine, align);
+
+      // 即保存
+      const dayKey = getDayKeyFromHash();
+      if (dayKey) saveRows(dayKey);
     });
 
     // 印刷
@@ -222,4 +406,4 @@
     initRouting();
     initEvents();
   });
-})();s
+})();
