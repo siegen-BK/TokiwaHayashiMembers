@@ -60,11 +60,13 @@
   }
 
   // ========= Line（行）ユーティリティ =========
+  // エスケープ（正しい順）
   const esc = (s) => (s || '')
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;');
 
+  // .cell の素テキストを .ln でラップ（既に .ln があれば触らない）
   function normalizeLines(cell) {
     if (cell.querySelector('.ln')) return;
     const raw = cell.innerText.replace(/\r/g, '');
@@ -73,9 +75,10 @@
   }
 
   const _rebuildingCells = new WeakSet();
-  let enterCloneAlign = null;   // Enterで作成する次行の揃え
-  let skipNextRebuild = false;  // Enterの直後、inputでrebuildしないための抑止
+  let enterCloneAlign = null; // Enter時の継承揃え
+  let skipNextRebuild = false; // Enter直後のinputでrebuildしない
 
+  // 既存 .ln の揃えを保持しつつ再構成（Enter継承も考慮）
   function rebuildLines(cell) {
     if (_rebuildingCells.has(cell)) return;
     _rebuildingCells.add(cell);
@@ -97,6 +100,7 @@
     _rebuildingCells.delete(cell);
   }
 
+  // .cell -> [{t,a}]
   function getLinesFromCell(cell) {
     const lns = cell.querySelectorAll('.ln');
     if (lns.length) {
@@ -114,6 +118,7 @@
     }
   }
 
+  // [{t,a}] -> .cell
   function setLinesToCell(cell, lines) {
     if (!lines || !lines.length) {
       cell.innerHTML = '';
@@ -122,6 +127,7 @@
     cell.innerHTML = lines.map(({t,a}) => `<span class="ln align-${a || 'center'}">${esc(t || '')}</span>`).join('');
   }
 
+  // キャレット位置の .ln
   function getCurrentLineInCell(cell) {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return null;
@@ -144,6 +150,41 @@
     const sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(range);
+  }
+
+  // === 編集対象セレクタ ===
+  const EDITABLE_LN_SEL =
+    '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
+    '#rows .cell[contenteditable="true"][data-field="sectionBottom"], ' +
+    '#rows .cell[contenteditable="true"][data-field="notes"]';
+
+  const EDITABLE_ALL_SEL =
+    EDITABLE_LN_SEL + ', ' +
+    '#rows .cell[contenteditable="true"][data-field="daido"], ' +
+    '#rows .cell[contenteditable="true"][data-field="chudo"], ' +
+    '#rows .cell[contenteditable="true"][data-field="sokudo"], ' +
+    '#rows .cell[contenteditable="true"][data-field="kaneTop"], ' +
+    '#rows .cell[contenteditable="true"][data-field="kaneBottom"], ' +
+    '#rows .cell[contenteditable="true"][data-field="fueTop"], ' +
+    '#rows .cell[contenteditable="true"][data-field="fueBottom"]';
+
+  // セル内容を全選択
+  function selectAllInCell(cell){
+    if (!cell) return;
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(cell);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  // Tab 用：隣の編集セル
+  function findSiblingEditableCell(current, forward = true){
+    const list = Array.from(document.querySelectorAll(EDITABLE_ALL_SEL));
+    const i = list.indexOf(current);
+    if (i === -1) return null;
+    const j = forward ? Math.min(i + 1, list.length - 1) : Math.max(i - 1, 0);
+    return list[j] || null;
   }
 
   // ========= 保存・復元 =========
@@ -310,11 +351,7 @@
     $('#view').addEventListener('compositionstart', () => { isComposing = true; });
     $('#view').addEventListener('compositionend', (e) => {
       isComposing = false;
-      const cell = e.target.closest(
-        '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
-        '#rows .cell[contenteditable="true"][data-field="sectionBottom"], ' +
-        '#rows .cell[contenteditable="true"][data-field="notes"]'
-      );
+      const cell = e.target.closest(EDITABLE_LN_SEL);
       const dayKey = getDayKeyFromHash && getDayKeyFromHash();
       if (!cell || !dayKey) return;
       if (cell.querySelector('.ln')) rebuildLines(cell);
@@ -322,14 +359,11 @@
       saveRows(dayKey);
     });
 
-    // --- Enter：改行を自前挿入（揃え継承＋キャレット維持） ---
+    // --- Enter（区間/備考 .ln）：自前改行 → 新行末尾へ ---
     $('#view').addEventListener('keydown', (e) => {
-      const cell = e.target.closest(
-        '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
-        '#rows .cell[contenteditable="true"][data-field="sectionBottom"], ' +
-        '#rows .cell[contenteditable="true"][data-field="notes"]'
-      );
-      if (!cell || isComposing || e.key !== 'Enter') return;
+      if (e.key !== 'Enter' || isComposing) return;
+      const cell = e.target.closest(EDITABLE_LN_SEL);
+      if (!cell) return;
 
       e.preventDefault();                // 既定の改行を止める
       normalizeLines(cell);              // .ln 構造がなければ作る
@@ -337,7 +371,6 @@
       const curLn = getCurrentLineInCell(cell) || cell.querySelector('.ln');
       if (!curLn) return;
 
-      // 現在行の揃えを判定
       const align =
         curLn.classList.contains('align-right') ? 'right' :
         curLn.classList.contains('align-left')  ? 'left'  : 'center';
@@ -346,43 +379,68 @@
       if (!sel || sel.rangeCount === 0) return;
       const range = sel.getRangeAt(0);
 
-      // 新しい行 .ln を作成（キャレット可視のため <br> を1つ入れておく）
       const newLn = document.createElement('span');
       newLn.className = `ln align-${align}`;
       newLn.appendChild(document.createElement('br'));
 
-      // 位置判定：行の最後か途中か
       const endRange = document.createRange();
       endRange.selectNodeContents(curLn);
       endRange.collapse(false);
       const atEnd = range.compareBoundaryPoints(Range.END_TO_END, endRange) === 0;
 
       if (atEnd) {
-        // 末尾：そのまま次に空行を挿入
         curLn.parentNode.insertBefore(newLn, curLn.nextSibling);
       } else {
-        // 途中：カーソル以降の内容を新行へ移動（curLn 内だけを抽出）
         const after = document.createRange();
         after.setStart(range.endContainer, range.endOffset);
         after.setEnd(curLn, curLn.childNodes.length);
         const frag = after.extractContents();
-        newLn.innerHTML = '';                // <br> を消してから移す
+        newLn.innerHTML = '';
         newLn.appendChild(frag);
-        // カーソル位置までの行に残す
         curLn.parentNode.insertBefore(newLn, curLn.nextSibling);
-        // 空になった場合は <br> を補う
         if (!curLn.textContent) curLn.appendChild(document.createElement('br'));
       }
 
-      // キャレットを新しい行の末尾へ
       placeCaretAtEnd(newLn);
-
-      // この後に来る input では rebuild しない（キャレット維持）
       skipNextRebuild = true;
 
-      // 保存
       const dayKey = getDayKeyFromHash && getDayKeyFromHash();
       if (dayKey) saveRows(dayKey);
+    });
+
+    // --- 単行セルの Enter：改行禁止 → 末尾へ ---
+    $('#view').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || isComposing) return;
+      const cell = e.target.closest(
+        '#rows .cell[contenteditable="true"]:not([data-field="sectionTop"]):not([data-field="sectionBottom"]):not([data-field="notes"])'
+      );
+      if (!cell) return;
+      e.preventDefault();
+      placeCaretAtEnd(cell);
+      const dayKey = getDayKeyFromHash && getDayKeyFromHash();
+      if (dayKey) scheduleSave(dayKey);
+    });
+
+    // --- Tab / Shift+Tab：次(前)セルへ移動し全選択 ---
+    $('#view').addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab' || isComposing) return;
+      const cell = e.target.closest(EDITABLE_ALL_SEL);
+      if (!cell) return;
+
+      e.preventDefault();
+
+      const next = findSiblingEditableCell(cell, /*forward*/ !e.shiftKey);
+      if (!next) return;
+
+      next.focus();
+      setTimeout(() => {
+        if (next.matches(EDITABLE_LN_SEL) && !next.querySelector('.ln')) {
+          normalizeLines(next);
+        }
+        selectAllInCell(next);
+        const dayKey = getDayKeyFromHash && getDayKeyFromHash();
+        if (dayKey) scheduleSave(dayKey);
+      }, 0);
     });
 
     // クリック（追加・削除・区間結合・行選択）
@@ -391,11 +449,7 @@
       const dayKey = getDayKeyFromHash();
 
       // 区間/備考セル → 行選択＆ツールバー表示
-      const editable = t.closest(
-        '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
-        '#rows .cell[contenteditable="true"][data-field="sectionBottom"], ' +
-        '#rows .cell[contenteditable="true"][data-field="notes"]'
-      );
+      const editable = t.closest(EDITABLE_LN_SEL);
       if (editable) {
         normalizeLines(editable);
         const ln = getCurrentLineInCell(editable) || editable.querySelector('.ln');
@@ -471,11 +525,7 @@
     $('#view').addEventListener('input', (e) => {
       if (isComposing) return;
 
-      const cell = e.target.closest(
-        '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
-        '#rows .cell[contenteditable="true"][data-field="sectionBottom"], ' +
-        '#rows .cell[contenteditable="true"][data-field="notes"]'
-      );
+      const cell = e.target.closest(EDITABLE_LN_SEL);
       const dayKey = getDayKeyFromHash();
       if (!cell || !dayKey) return;
 
