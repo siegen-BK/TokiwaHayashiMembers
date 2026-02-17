@@ -27,25 +27,18 @@
     try { return JSON.parse(text); } catch { return fallback; }
   }
 
-  // ========= 配置（左/中/右）ユーティリティ =========
-  // 区間・備考だけ配置を持つ
-  const ALIGN_FIELDS = new Set(['sectionTop', 'sectionBottom', 'notes']);
+  // ========= 配置（左/中/右） =========
+  const ALIGN_FIELDS = new Set(['sectionTop','sectionBottom','notes']);
 
   function applyAlign(cell, align) {
-    // クラス
-    cell.classList.remove('align-left', 'align-center', 'align-right');
+    cell.classList.remove('align-left','align-center','align-right');
     cell.classList.add(`align-${align}`);
-    // インライン（CSSがなくても効くように）
     cell.style.textAlign = (align === 'left') ? 'left' : (align === 'right') ? 'right' : 'center';
-    // flex 中央寄せなどに対応するなら justify-content も触る（安全側）
     cell.style.justifyContent = (align === 'left') ? 'flex-start' :
                                 (align === 'right') ? 'flex-end'   : 'center';
-    // 保存用の明示
     cell.dataset.align = align;
   }
-
   function getAlign(cell) {
-    // 優先：data-align → クラス → インライン → 既定 'center'
     if (cell.dataset.align) return cell.dataset.align;
     if (cell.classList.contains('align-left'))  return 'left';
     if (cell.classList.contains('align-right')) return 'right';
@@ -67,26 +60,28 @@
         <div class="cell span2" style="grid-column:3; grid-row:1 / span 2;" contenteditable="true" data-field="chudo"></div>
         <div class="cell span2" style="grid-column:4; grid-row:1 / span 2;" contenteditable="true" data-field="sokudo"></div>
 
-        <!-- 鉦（上下2段）※下段のみ split-top -->
+        <!-- 鉦（上下2段） -->
         <div class="cell" style="grid-column:5; grid-row:1;" contenteditable="true" data-field="kaneTop"></div>
         <div class="cell split-top" style="grid-column:5; grid-row:2;" contenteditable="true" data-field="kaneBottom"></div>
 
-        <!-- 笛（上下2段）※下段のみ split-top -->
+        <!-- 笛（上下2段） -->
         <div class="cell" style="grid-column:6; grid-row:1;" contenteditable="true" data-field="fueTop"></div>
         <div class="cell split-top" style="grid-column:6; grid-row:2;" contenteditable="true" data-field="fueBottom"></div>
 
         <!-- 備考（2段ぶち抜き） -->
         <div class="cell span2" style="grid-column:7; grid-row:1 / span 2;" contenteditable="true" data-field="notes"></div>
 
-        <!-- 行削除（右余白） -->
-        <button class="row-del" type="button" title="この行を削除">🗑</button>
+        <!-- 左外側：入れ替え（⇅） -->
+        <button class="row-swap"   type="button" title="この行と前の行を入れ替え">⇅</button>
+
+        <!-- 右外側：ツール | 削除（中央揃え） -->
+        <button class="row-tools"  type="button" title="ツール">⋯</button>
+        <button class="row-del"    type="button" title="この行を削除">🗑</button>
       </div>
     `;
   }
 
   // ========= 保存・復元 =========
-  // 区間/備考：{ t, a } で保存（後方互換：文字列も受ける）
-  // それ以外：プレーン文字列
   function serializeRows() {
     const rowsEl = $('#rows');
     if (!rowsEl) return [];
@@ -104,6 +99,10 @@
       });
       return obj;
     });
+  }
+
+  function saveRows(dayKey) {
+    localStorage.setItem(rowsKey(dayKey), JSON.stringify(serializeRows()));
   }
 
   function restoreRows(dayKey) {
@@ -124,9 +123,7 @@
       group.querySelectorAll('[data-field]').forEach(cell => {
         const field = cell.dataset.field;
         const v = rowObj[field];
-
         if (ALIGN_FIELDS.has(field)) {
-          // {t,a} or 文字列
           if (v && typeof v === 'object') {
             if (v.t) cell.textContent = v.t;
             applyAlign(cell, v.a || 'center');
@@ -136,16 +133,11 @@
           } else {
             applyAlign(cell, 'center');
           }
-        } else {
-          // プレーン
-          if (typeof v === 'string') cell.textContent = v;
+        } else if (typeof v === 'string') {
+          cell.textContent = v;
         }
       });
     }
-  }
-
-  function saveRows(dayKey) {
-    localStorage.setItem(rowsKey(dayKey), JSON.stringify(serializeRows()));
   }
 
   // デバウンス保存
@@ -155,23 +147,12 @@
     saveTimer = setTimeout(() => saveRows(dayKey), 250);
   }
 
-  // ========= 配置ツールバー（セル単位：区間/備考のみ） =========
+  // ========= 配置ツールバー =========
   function ensureAlignToolbar() {
     if (document.getElementById('alignToolbar')) return;
     const tb = document.createElement('div');
     tb.id = 'alignToolbar';
-    tb.className = 'align-toolbar'; // 既存CSSがなくても動作はする
-    tb.style.position = 'fixed';
-    tb.style.right = '14px';
-    tb.style.bottom = '14px';
-    tb.style.zIndex = '9999';
-    tb.style.display = 'flex';
-    tb.style.gap = '8px';
-    tb.style.background = '#fff';
-    tb.style.border = '1px solid #ddd';
-    tb.style.borderRadius = '10px';
-    tb.style.padding = '8px';
-    tb.style.boxShadow = '0 6px 18px rgba(0,0,0,.12)';
+    tb.className = 'align-toolbar';
     tb.innerHTML = `
       <button type="button" data-align="left">左</button>
       <button type="button" data-align="center">中</button>
@@ -250,37 +231,75 @@
 
   // ========= イベント =========
   function initEvents() {
-    // クリック（追加・削除・セル選択・配置変更）
+    // クリック（追加・削除・セル選択・ツール・入替）
     $('#view').addEventListener('click', (e) => {
       const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
       const dayKey = getDayKeyFromHash();
 
-      // セル選択（区間/備考のみ配置可）
+      // 区間/備考セルの選択 → ツールバーで配置変更可
       const cell = t.closest('#rows .cell[contenteditable="true"]');
-      if (cell && ALIGN_FIELDS.has(cell.dataset.field)) {
+      if (cell && cell.dataset && cell.dataset.field && ALIGN_FIELDS.has(cell.dataset.field)) {
+        if (selectedCell) selectedCell.style.outline = '';
         selectedCell = cell;
-        // 選択感（任意・最小）：枠線を軽く
         selectedCell.style.outline = '2px solid #0a7cff55';
         selectedCell.style.outlineOffset = '-2px';
       } else if (!t.closest('#alignToolbar')) {
-        // セル外クリックで選択解除（ツールバー以外）
-        if (selectedCell) {
-          selectedCell.style.outline = '';
-          selectedCell = null;
-        }
+        if (selectedCell) { selectedCell.style.outline = ''; selectedCell = null; }
       }
 
-      // 行削除
+      // 削除
       const del = t.closest('.row-del');
       if (del) {
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault(); e.stopPropagation();
         del.closest('.row-group')?.remove();
         if (dayKey) saveRows(dayKey);
         return;
       }
 
-      // 行追加
+      // ツール（今はプレースホルダ：将来機能）
+      const tools = t.closest('.row-tools');
+      if (tools) {
+        e.preventDefault(); e.stopPropagation();
+        // ここに将来のメニューを実装予定（今は何もしない）
+        return;
+      }
+
+      // 入れ替え（⇅）：前行があれば前行と、無ければ次行と入替
+      const swapBtn = t.closest('.row-swap');
+      if (swapBtn) {
+        e.preventDefault(); e.stopPropagation();
+        const rowsEl = $('#rows');
+        if (!rowsEl || !dayKey) return;
+
+        const cur = swapBtn.closest('.row-group');
+        if (!cur) return;
+
+        // フォーカス列を保持
+        const activeCell = document.activeElement?.closest('.cell[data-field]');
+        const activeField = activeCell?.dataset?.field || null;
+
+        const prev = cur.previousElementSibling;
+        const next = cur.nextElementSibling;
+
+        if (prev) {
+          rowsEl.insertBefore(cur, prev);      // prev と入れ替え（cur を前に）
+        } else if (next) {
+          rowsEl.insertBefore(next, cur);      // 先頭は次行と入替（next を前に）
+        }
+
+        // 同じ列にフォーカス復帰
+        setTimeout(() => {
+          if (activeField) {
+            const target = cur.querySelector(`.cell[data-field="${activeField}"]`);
+            target?.focus();
+          }
+        }, 0);
+
+        saveRows(dayKey);
+        return;
+      }
+
+      // 追加
       const add = t.closest('#btnAddInline');
       if (add) {
         const rowsEl = $('#rows');
@@ -293,20 +312,17 @@
       }
     });
 
-    // 配置ツールバーのボタン
+    // 配置ツールバー（左/中/右）
     document.body.addEventListener('click', (e) => {
       const btn = e.target.closest('#alignToolbar button[data-align]');
-      if (!btn) return;
-      if (!selectedCell) return;
-
+      if (!btn || !selectedCell) return;
       const align = btn.dataset.align;
       applyAlign(selectedCell, align);
-
       const dayKey = getDayKeyFromHash();
       if (dayKey) saveRows(dayKey);
     });
 
-    // 入力 → デバウンス保存（プレーン）
+    // 入力 → デバウンス保存
     $('#view').addEventListener('input', (e) => {
       if (!e.target.closest('#rows')) return;
       const dayKey = getDayKeyFromHash();
@@ -314,14 +330,14 @@
       scheduleSave(dayKey);
     });
 
-    // Tab/Shift+Tab：次(前)の編集セルへ移動し、全選択
+    // Tab/Shift+Tab：次(前)セルへ移動し全選択
     $('#view').addEventListener('keydown', (e) => {
       if (e.key !== 'Tab') return;
 
       const cell = e.target.closest('#rows .cell[contenteditable="true"]');
       if (!cell) return;
 
-      e.preventDefault(); // 既定のフォーカス移動を止める
+      e.preventDefault();
 
       const list = Array.from(document.querySelectorAll('#rows .cell[contenteditable="true"]'));
       const i = list.indexOf(cell);
@@ -334,14 +350,13 @@
 
       next.focus();
       setTimeout(() => {
-        // 全選択
         const sel = window.getSelection();
         const range = document.createRange();
         range.selectNodeContents(next);
         sel.removeAllRanges();
         sel.addRange(range);
 
-        // 選択対象が区間/備考なら選択状態の見た目を更新
+        // 区間/備考なら選択状態の見た目も更新
         if (ALIGN_FIELDS.has(next.dataset.field)) {
           if (selectedCell) selectedCell.style.outline = '';
           selectedCell = next;
@@ -351,8 +366,8 @@
           if (selectedCell) { selectedCell.style.outline = ''; selectedCell = null; }
         }
 
-        const dayKey = getDayKeyFromHash();
-        if (dayKey) scheduleSave(dayKey);
+        const dayKey2 = getDayKeyFromHash();
+        if (dayKey2) scheduleSave(dayKey2);
       }, 0);
     });
 
