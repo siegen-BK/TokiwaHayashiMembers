@@ -11,6 +11,10 @@
 
   /* 行の高さ（2段構成の基準） */
   --h-unit: 36px;       /* 1段の高さ */
+  --header-h: calc(var(--h-unit) / 2); /* ① 先頭行は半分の高さ */
+
+  /* sticky の上端オフセット（JSで計算して代入） */
+  --sticky-top: 0px;
 }
 
 *{ box-sizing:border-box; }
@@ -56,29 +60,41 @@ main{
 
 .note{ color:var(--muted); }
 
-/* 見出し行（＋追加 / タイトル） */
-.section-header{
+/* ===== セクション上部（② 書式ボタンを左、タイトルは中央） ===== */
+.section-toolbar{
+  position:relative;
+  max-width:960px;
+  margin:12px auto 8px;
+  min-height:44px; /* タイトルのセンタリング余白 */
+}
+.toolbar-left{
+  position:absolute;
+  left:0;
+  top:50%;
+  transform:translateY(-50%);
   display:flex;
-  align-items:center;
   gap:8px;
-  margin:12px 0;
+  align-items:center;
 }
-.section-header h2{
-  margin:0;
-  font-size:28px;
-  font-weight:700;
-}
-
-/* 追加ボタン */
+.align-inline button,
 .btn-add{
   padding:6px 10px;
-  border:1px solid #0a7cff;
-  background:#eaf2ff;
-  color:#0a7cff;
+  border:1px solid #cfcfcf;
+  background:#fff;
   border-radius:8px;
   cursor:pointer;
 }
+.align-inline button:hover{ background:#f5f7fb; }
+.btn-add{ border-color:#0a7cff; color:#0a7cff; background:#eaf2ff; }
 .btn-add:hover{ background:#dbe9ff; }
+
+/* ③ タイトルは表（区間〜備考）横幅に対して中央揃え */
+.sheet-title{
+  margin:0;
+  text-align:center;
+  font-size:28px;
+  font-weight:700;
+}
 
 /* =========================
    Excel風：外枠＋格子
@@ -94,22 +110,35 @@ main{
     var(--col-notes);
 }
 
-/* ---- ヘッダ（先頭行） ---- */
+/* ---- 先頭行（ヘッダ） ----
+   ④ スクロール固定（sticky）
+*/
 .first-row-table{
   display:grid;
   border-top:1px solid var(--grid);
   border-left:1px solid var(--grid);
   border-right:1px solid var(--grid);
   border-bottom:none;
-  margin:8px 0 0;
+  margin:0;              /* ツールバー直下に密着 */
   column-gap:0;
   row-gap:0;
+
+  position:sticky;
+  top:var(--sticky-top);
+  z-index:20;
+  background:var(--bg);  /* 下の行と重なるときの塗りつぶし */
 }
 
-/* ヘッダセル：全セルに下線、縦線は「最後以外」 */
+/* ヘッダセル：全セルに下線、縦線は「最後以外」、
+   高さは --header-h（①） */
 .first-row-table .cell{
   border-bottom:1px solid var(--grid);
-  padding:10px 12px;
+  padding:0 12px;
+  min-height:var(--header-h);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
   text-align:center;
   font-size:15px;
   background:var(--bg);
@@ -124,7 +153,6 @@ main{
   border-left:1px solid var(--grid);
   border-right:1px solid var(--grid);
   margin-top:0;
-  position:relative; /* 境界ボタンの基準ではないが、保険 */
 }
 
 /* ---- 追加行（1行＝2段グリッド） ---- */
@@ -132,7 +160,7 @@ main{
   display:grid;
   grid-template-rows: 1fr 1fr;
   border-bottom:1px solid var(--grid);
-  position:relative;               /* 右外側ボタンの基準 */
+  position:relative;               /* 右側ボタンの基準 */
   column-gap:0;
   row-gap:0;
 }
@@ -169,17 +197,6 @@ main{
 }
 
 /* =========================
-   区間 2段結合/解除（merge-section）
-   ========================= */
-.row-group.merge-section [data-field="sectionTop"]{
-  grid-row: 1 / span 2;
-  min-height: calc(var(--h-unit) * 2);
-}
-.row-group.merge-section [data-field="sectionBottom"]{
-  display:none;
-}
-
-/* =========================
    右外側：ツール／削除（行の垂直中央）
    ========================= */
 .row-tools,
@@ -208,17 +225,14 @@ main{
 /* =========================
    行間境界スワップ（⇅）
    ========================= */
-/* 行と行の“境界”に挿入するスロット（高さ0） */
 .swap-slot{
   position:relative;
   height:0;
 }
-
-/* スロット内のボタンを境界の中点に重ねる */
 .swap-slot .row-swap{
   position:absolute;
   left:-44px;
-  top:-17px;            /* ボタン(34px)の半分だけ上へ */
+  top:-17px;            /* 34px の半分だけ上へ */
   width:34px; height:34px;
   border:1px solid #cfcfcf;
   border-radius:8px;
@@ -226,11 +240,10 @@ main{
   cursor:pointer;
   display:grid; place-items:center;
   font-size:16px; line-height:1;
-  z-index:11;          /* 行右ボタンより手前に */
+  z-index:11;
 }
 .swap-slot .row-swap:hover{
-  background:#eef7ff;
-  border-color:#0a7cff;
+  background:#eef7ff; border-color:#0a7cff;
 }
 
 /* 画面が狭いときは内側へ */
