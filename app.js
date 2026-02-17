@@ -152,15 +152,11 @@
     rebuildSwapSlots();
   }
 
-  // ========= sticky オフセット（②③④：ツールバー＋先頭行固定） =========
-  function setStickyTopOffsets(){
+  // ========= 先頭行（表ヘッダ）だけの sticky オフセットを算出 =========
+  function setStickyHeaderOffset(){
     const appHeaderH = document.querySelector('.app-header')?.offsetHeight || 0;
-    const toolbarH   = document.querySelector('.section-toolbar')?.offsetHeight || 0;
-
-    // ツールバーはアプリヘッダの直下に固定
-    document.documentElement.style.setProperty('--sticky-top-toolbar', `${appHeaderH}px`);
-    // 先頭行はツールバーの直下に固定
-    document.documentElement.style.setProperty('--sticky-top-header',  `${appHeaderH + toolbarH}px`);
+    // 先頭行はタブ行の直下に固定
+    document.documentElement.style.setProperty('--sticky-top-header', `${appHeaderH}px`);
   }
 
   // ========= 描画 =========
@@ -173,7 +169,7 @@
 
     $('#view').innerHTML = `
       <section>
-        <!-- ② 書式ボタンを「追加」の左側、③ タイトル中央 -->
+        <!-- タイトル行（固定しない）：左に[左/中/右]+追加、中央にタイトル -->
         <div class="section-toolbar">
           <div class="toolbar-left">
             <div class="align-inline" id="inlineAlign">
@@ -186,6 +182,7 @@
           <h2 class="sheet-title" id="sectionTitleHeading" title="クリックで編集">${titleDefault}</h2>
         </div>
 
+        <!-- 先頭行（固定する） -->
         <div class="first-row-table" role="table" aria-label="固定先頭行（区間・楽器）">
           <div class="cell" role="columnheader">区間・場所</div>
           <div class="cell" role="columnheader">大胴</div>
@@ -196,6 +193,7 @@
           <div class="cell" role="columnheader">備考</div>
         </div>
 
+        <!-- 以降の行 -->
         <div id="rows" class="rows"></div>
       </section>
     `;
@@ -218,8 +216,8 @@
     // 行復元＋スロット再構成
     restoreRows(dayKey);
 
-    // ②③④ sticky 相当のオフセットを算出
-    setStickyTopOffsets();
+    // 先頭行だけ固定するための top を算出
+    setStickyHeaderOffset();
   }
 
   // ========= ルーティング初期化 =========
@@ -294,6 +292,7 @@
         rowsEl.insertBefore(lower, upper);
 
         rebuildSwapSlots();
+
         if (activeField) {
           const target = lower.querySelector(`.cell[data-field="${activeField}"]`);
           target?.focus();
@@ -313,12 +312,12 @@
         last?.querySelector('[data-field="sectionTop"]')?.focus();
         saveRows(dayKey);
         rebuildSwapSlots();
-        setStickyTopOffsets(); // 追加でツールバー高さが変わった場合に備える
+        setStickyHeaderOffset(); // 念のため（高さが変化した場合）
         return;
       }
     });
 
-    // ② ヘッダー左の「書式（左/中/右）」ボタン
+    // ヘッダー左の「書式（左/中/右）」ボタン
     document.body.addEventListener('click', (e) => {
       const btn = e.target.closest('#inlineAlign button[data-align]');
       if (!btn || !selectedCell) return;
@@ -377,8 +376,8 @@
       }, 0);
     });
 
-    // リサイズ時に sticky のオフセットを再算出（④）
-    window.addEventListener('resize', setStickyTopOffsets);
+    // ウィンドウリサイズ時に先頭行の固定位置を再算出
+    window.addEventListener('resize', setStickyHeaderOffset);
   }
 
   // ========= 起動 =========
