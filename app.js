@@ -152,19 +152,20 @@
     rebuildSwapSlots();
   }
 
-  // ========= sticky の top を算出（タブ直下にツールバー、さらに先頭行） =========
+  // ========= sticky の top を算出（タブ → ツールバー → 先頭行） =========
   function setStickyOffsets(){
-    const appHeaderH = document.querySelector('.app-header')?.offsetHeight || 0;
-    const toolbarEl  = document.querySelector('.section-toolbar');
+    // タブ（.app-header）高さ
+    const appH = document.querySelector('.app-header')?.offsetHeight || 0;
+    document.documentElement.style.setProperty('--sticky-top-appheader', `${0}px`);
 
     // ツールバーはタブ直下
-    document.documentElement.style.setProperty('--sticky-top-toolbar', `${appHeaderH}px`);
+    document.documentElement.style.setProperty('--sticky-top-toolbar', `${appH}px`);
 
-    // いったん可視状態で高さを取得（レイアウト済み）
-    const toolbarH = toolbarEl?.offsetHeight || 0;
+    // いったんレイアウト済みのツールバー高さを取得
+    const toolbarH = document.querySelector('.section-toolbar')?.offsetHeight || 0;
 
-    // 先頭行はツールバー直下
-    document.documentElement.style.setProperty('--sticky-top-header', `${appHeaderH + toolbarH}px`);
+    // 先頭行はタブ＋ツールバー直下
+    document.documentElement.style.setProperty('--sticky-top-tablehead', `${appH + toolbarH}px`);
   }
 
   // ========= 描画 =========
@@ -201,7 +202,7 @@
           <div class="cell" role="columnheader">備考</div>
         </div>
 
-        <!-- 以降の行 -->
+        <!-- 以降の行（ここだけスクロールで動く） -->
         <div id="rows" class="rows"></div>
       </section>
     `;
