@@ -102,7 +102,7 @@ main{
   display:grid;
   border-top:1px solid var(--grid);
   border-left:1px solid var(--grid);
-  border-right:none;
+  border-right:1px solid var(--grid);
   border-bottom:none;
   margin:8px 0 0;
 }
