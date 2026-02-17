@@ -21,7 +21,7 @@
   }
 
   const titleKey = (dayKey) => `${STORAGE_PREFIX}title:${dayKey}`;
-  const rowsKey  = (dayKey) => `${STORAGE_PREFIX}rows:${dayKey}`;
+  const rowsKey  = (dayKey)  => `${STORAGE_PREFIX}rows:${dayKey}`;
 
   function safeJsonParse(text, fallback) {
     try { return JSON.parse(text); } catch { return fallback; }
@@ -149,12 +149,7 @@
       const obj = {};
       group.querySelectorAll('[data-field]').forEach(cell => {
         const lines = getLinesFromCell(cell);
-        if (lines.length) {
-          obj[cell.dataset.field] = { lines };
-        } else {
-          // 空は空で保持
-          obj[cell.dataset.field] = { lines: [] };
-        }
+        obj[cell.dataset.field] = { lines }; // 空でも lines:[] で保持
       });
       // 区間2段結合フラグ
       obj.__flags = { sectionMerged: group.classList.contains('merge-section') };
@@ -269,7 +264,7 @@
 
         <div id="rows" class="rows"></div>
       </section>
-    ";
+    `;
 
     // タイトル復元＆編集
     const h = $('#sectionTitleHeading');
