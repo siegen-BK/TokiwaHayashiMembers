@@ -11,11 +11,10 @@
 
   /* 行の高さ（2段構成の基準） */
   --h-unit: 36px;             /* 1段の高さ */
-  --header-h: calc(var(--h-unit) / 2);   /* ① 先頭行は半分の高さ */
+  --header-h: calc(var(--h-unit) / 2);   /* 先頭行は半分の高さ */
 
-  /* sticky の上端オフセット（JSで算出） */
-  --sticky-top-toolbar: 0px;  /* ツールバー（タイトル含む）の top */
-  --sticky-top-header:  0px;  /* 先頭行（表ヘッダ）の top */
+  /* 先頭行（表ヘッダ）だけ固定するための top（JSで算出） */
+  --sticky-top-header: 0px;
 }
 
 *{ box-sizing:border-box; }
@@ -61,19 +60,15 @@ main{
 
 .note{ color:var(--muted); }
 
-/* ===== ② 書式ボタンを左、「追加」左横、③ タイトル中央（表幅基準）
-        ＋ 先頭行と同様 sticky 固定 ===== */
+/* ===== ヘッダー下・表のツールバー（固定しない） ===== */
 .section-toolbar{
-  position:sticky;                 /* 先頭行の上に固定 */
-  top:var(--sticky-top-toolbar);
-  z-index:30;
-  background:var(--bg);
+  position: static;              /* ← 固定しない（上に流れる） */
+  z-index: auto;
+  background: transparent;       /* 好みで var(--bg) でもOK */
   border-bottom:1px solid var(--grid);
-
-  position:sticky;
   max-width:960px;
-  margin:12px auto 0;             /* 先頭行に密着 */
-  min-height:44px;
+  margin:12px auto 0;
+  min-height:44px;               /* タイトルセンタリング余白 */
 }
 .toolbar-left{
   position:absolute;
@@ -96,7 +91,7 @@ main{
 .btn-add{ border-color:#0a7cff; color:#0a7cff; background:#eaf2ff; }
 .btn-add:hover{ background:#dbe9ff; }
 
-/* ③ タイトルは表の幅に対して中央 */
+/* タイトルは表（区間〜備考）の幅に対して中央 */
 .sheet-title{
   margin:0;
   text-align:center;
@@ -119,7 +114,7 @@ main{
 }
 
 /* ---- 先頭行（ヘッダ） ----
-   ④ ツールバー直下に sticky 固定
+   先頭行だけ sticky 固定（タブ直下）
 */
 .first-row-table{
   display:grid;
@@ -134,11 +129,12 @@ main{
   position:sticky;
   top:var(--sticky-top-header);
   z-index:20;
-  background:var(--bg);
+
+  /* 下の行の罫線が透けないよう白で塗る */
+  background:#fff; /* または background:var(--bg); */
 }
 
-/* ヘッダセル：下線は全セル、縦線は「最後以外」、
-   高さは --header-h（①） */
+/* ヘッダセル：全セルに下線、縦線は「最後以外」、高さは半分 */
 .first-row-table .cell{
   border-bottom:1px solid var(--grid);
   padding:0 12px;
