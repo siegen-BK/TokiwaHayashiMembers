@@ -71,14 +71,29 @@
         <!-- 備考（2段ぶち抜き） -->
         <div class="cell span2" style="grid-column:7; grid-row:1 / span 2;" contenteditable="true" data-field="notes"></div>
 
-        <!-- 左外側：入れ替え（⇅） -->
-        <button class="row-swap"   type="button" title="この行と前の行を入れ替え">⇅</button>
-
         <!-- 右外側：ツール | 削除（中央揃え） -->
         <button class="row-tools"  type="button" title="ツール">⋯</button>
         <button class="row-del"    type="button" title="この行を削除">🗑</button>
       </div>
     `;
+  }
+
+  // ========= 行間スロット（⇅）を再構成 =========
+  function rebuildSwapSlots(){
+    const rowsEl = $('#rows');
+    if (!rowsEl) return;
+
+    // 既存スロットを除去
+    rowsEl.querySelectorAll('.swap-slot').forEach(el => el.remove());
+
+    const rows = Array.from(rowsEl.querySelectorAll('.row-group'));
+    // 各境界にスロットを挿入（最後の行の下には作らない）
+    for (let i = 0; i < rows.length - 1; i++){
+      const slot = document.createElement('div');
+      slot.className = 'swap-slot';
+      slot.innerHTML = `<button class="row-swap" type="button" title="この境界の上下を入れ替え">⇅</button>`;
+      rows[i].after(slot);
+    }
   }
 
   // ========= 保存・復元 =========
@@ -100,11 +115,9 @@
       return obj;
     });
   }
-
   function saveRows(dayKey) {
     localStorage.setItem(rowsKey(dayKey), JSON.stringify(serializeRows()));
   }
-
   function restoreRows(dayKey) {
     const rowsEl = $('#rows');
     if (!rowsEl) return;
@@ -138,6 +151,9 @@
         }
       });
     }
+
+    // 行間スロットを再構成
+    rebuildSwapSlots();
   }
 
   // デバウンス保存
@@ -160,14 +176,12 @@
     `;
     document.body.appendChild(tb);
   }
-
   let selectedCell = null;
 
   // ========= 描画 =========
   function renderCover() {
     $('#view').innerHTML = '<section><h2>表紙</h2></section>';
   }
-
   function renderSection(rest) {
     const dayKey = (rest || DEFAULT_DAY).toLowerCase();
     const titleDefault = TITLE_BY_DAY[dayKey] || TITLE_BY_DAY[DEFAULT_DAY];
@@ -197,7 +211,6 @@
     const h = $('#sectionTitleHeading');
     const saved = localStorage.getItem(titleKey(dayKey));
     if (saved && saved.trim()) h.textContent = saved.trim();
-
     h.style.cursor = 'pointer';
     h.addEventListener('click', () => {
       const current = localStorage.getItem(titleKey(dayKey)) || h.textContent;
@@ -209,10 +222,8 @@
       h.textContent = next;
     });
 
-    // 行復元
+    // 行復元＋スロット再構成
     restoreRows(dayKey);
-
-    // 配置ツールバー
     ensureAlignToolbar();
   }
 
@@ -231,14 +242,14 @@
 
   // ========= イベント =========
   function initEvents() {
-    // クリック（追加・削除・セル選択・ツール・入替）
+    // クリック（追加・削除・セル選択・ツール・行間スワップ）
     $('#view').addEventListener('click', (e) => {
       const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
       const dayKey = getDayKeyFromHash();
 
       // 区間/備考セルの選択 → ツールバーで配置変更可
       const cell = t.closest('#rows .cell[contenteditable="true"]');
-      if (cell && cell.dataset && cell.dataset.field && ALIGN_FIELDS.has(cell.dataset.field)) {
+      if (cell && cell.dataset && ALIGN_FIELDS.has(cell.dataset.field)) {
         if (selectedCell) selectedCell.style.outline = '';
         selectedCell = cell;
         selectedCell.style.outline = '2px solid #0a7cff55';
@@ -252,48 +263,47 @@
       if (del) {
         e.preventDefault(); e.stopPropagation();
         del.closest('.row-group')?.remove();
-        if (dayKey) saveRows(dayKey);
+        if (dayKey) { saveRows(dayKey); rebuildSwapSlots(); }
         return;
       }
 
-      // ツール（今はプレースホルダ：将来機能）
+      // ツール（プレースホルダ）
       const tools = t.closest('.row-tools');
       if (tools) {
         e.preventDefault(); e.stopPropagation();
-        // ここに将来のメニューを実装予定（今は何もしない）
+        // 将来のメニュー用（今は何もしない）
         return;
       }
 
-      // 入れ替え（⇅）：前行があれば前行と、無ければ次行と入替
-      const swapBtn = t.closest('.row-swap');
+      // 行間スワップ（⇅）
+      const swapBtn = t.closest('.swap-slot .row-swap');
       if (swapBtn) {
         e.preventDefault(); e.stopPropagation();
         const rowsEl = $('#rows');
         if (!rowsEl || !dayKey) return;
 
-        const cur = swapBtn.closest('.row-group');
-        if (!cur) return;
+        const slot = swapBtn.closest('.swap-slot');
+        const upper = slot?.previousElementSibling;   // 上の行
+        const lower = slot?.nextElementSibling;       // 下の行
+        if (!upper || !lower) return;
+        if (!upper.classList.contains('row-group')) return;
+        if (!lower.classList.contains('row-group')) return;
 
-        // フォーカス列を保持
+        // 直前フォーカス列（あれば保持）
         const activeCell = document.activeElement?.closest('.cell[data-field]');
         const activeField = activeCell?.dataset?.field || null;
 
-        const prev = cur.previousElementSibling;
-        const next = cur.nextElementSibling;
+        // 並べ替え：lower を upper の前へ（= 上下入替）
+        rowsEl.insertBefore(lower, upper);
 
-        if (prev) {
-          rowsEl.insertBefore(cur, prev);      // prev と入れ替え（cur を前に）
-        } else if (next) {
-          rowsEl.insertBefore(next, cur);      // 先頭は次行と入替（next を前に）
+        // 並べ替え後、スロットを全再構成
+        rebuildSwapSlots();
+
+        // フォーカスの復帰（同じ列）
+        if (activeField) {
+          const target = lower.querySelector(`.cell[data-field="${activeField}"]`);
+          target?.focus();
         }
-
-        // 同じ列にフォーカス復帰
-        setTimeout(() => {
-          if (activeField) {
-            const target = cur.querySelector(`.cell[data-field="${activeField}"]`);
-            target?.focus();
-          }
-        }, 0);
 
         saveRows(dayKey);
         return;
@@ -308,6 +318,7 @@
         const last = rowsEl.lastElementChild;
         last?.querySelector('[data-field="sectionTop"]')?.focus();
         saveRows(dayKey);
+        rebuildSwapSlots();
         return;
       }
     });
@@ -356,7 +367,7 @@
         sel.removeAllRanges();
         sel.addRange(range);
 
-        // 区間/備考なら選択状態の見た目も更新
+        // 区間/備考なら選択見た目も更新
         if (ALIGN_FIELDS.has(next.dataset.field)) {
           if (selectedCell) selectedCell.style.outline = '';
           selectedCell = next;
