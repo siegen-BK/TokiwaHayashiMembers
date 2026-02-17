@@ -87,7 +87,6 @@
     rowsEl.querySelectorAll('.swap-slot').forEach(el => el.remove());
 
     const rows = Array.from(rowsEl.querySelectorAll('.row-group'));
-    // 各境界にスロットを挿入（最後の行の下には作らない）
     for (let i = 0; i < rows.length - 1; i++){
       const slot = document.createElement('div');
       slot.className = 'swap-slot';
@@ -152,8 +151,15 @@
       });
     }
 
-    // 行間スロットを再構成
     rebuildSwapSlots();
+  }
+
+  // ========= sticky オフセットを計算（④） =========
+  function setStickyTopOffset(){
+    const appHeaderH = document.querySelector('.app-header')?.offsetHeight || 0;
+    const toolbarH   = document.querySelector('.section-toolbar')?.offsetHeight || 0;
+    const topPx = appHeaderH + toolbarH;     // タブ/ツールバー分だけ下げる
+    document.documentElement.style.setProperty('--sticky-top', `${topPx}px`);
   }
 
   // デバウンス保存
@@ -162,21 +168,6 @@
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => saveRows(dayKey), 250);
   }
-
-  // ========= 配置ツールバー =========
-  function ensureAlignToolbar() {
-    if (document.getElementById('alignToolbar')) return;
-    const tb = document.createElement('div');
-    tb.id = 'alignToolbar';
-    tb.className = 'align-toolbar';
-    tb.innerHTML = `
-      <button type="button" data-align="left">左</button>
-      <button type="button" data-align="center">中</button>
-      <button type="button" data-align="right">右</button>
-    `;
-    document.body.appendChild(tb);
-  }
-  let selectedCell = null;
 
   // ========= 描画 =========
   function renderCover() {
@@ -188,9 +179,17 @@
 
     $('#view').innerHTML = `
       <section>
-        <div class="section-header">
-          <button id="btnAddInline" class="btn-add" type="button" title="このページに要素を追加">＋ 追加</button>
-          <h2 id="sectionTitleHeading" title="クリックで編集">${titleDefault}</h2>
+        <!-- ② 書式ボタンを「追加」の左側に -->
+        <div class="section-toolbar">
+          <div class="toolbar-left">
+            <div class="align-inline" id="inlineAlign">
+              <button type="button" data-align="left"   title="左揃え">左</button>
+              <button type="button" data-align="center" title="中央揃え">中</button>
+              <button type="button" data-align="right"  title="右揃え">右</button>
+            </div>
+            <button id="btnAddInline" class="btn-add" type="button" title="このページに要素を追加">＋ 追加</button>
+          </div>
+          <h2 class="sheet-title" id="sectionTitleHeading" title="クリックで編集">${titleDefault}</h2>
         </div>
 
         <div class="first-row-table" role="table" aria-label="固定先頭行（区間・楽器）">
@@ -224,7 +223,9 @@
 
     // 行復元＋スロット再構成
     restoreRows(dayKey);
-    ensureAlignToolbar();
+
+    // sticky のオフセットを算出（④）
+    setStickyTopOffset();
   }
 
   // ========= ルーティング初期化 =========
@@ -241,21 +242,21 @@
   }
 
   // ========= イベント =========
+  let selectedCell = null;
+
   function initEvents() {
-    // クリック（追加・削除・セル選択・ツール・行間スワップ）
+    // クリック（追加・削除・セル選択・ツール・行間スワップ・配置ボタン）
     $('#view').addEventListener('click', (e) => {
       const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
       const dayKey = getDayKeyFromHash();
 
-      // 区間/備考セルの選択 → ツールバーで配置変更可
+      // 区間/備考セルの選択 → 配置ボタンで変更可
       const cell = t.closest('#rows .cell[contenteditable="true"]');
       if (cell && cell.dataset && ALIGN_FIELDS.has(cell.dataset.field)) {
         if (selectedCell) selectedCell.style.outline = '';
         selectedCell = cell;
         selectedCell.style.outline = '2px solid #0a7cff55';
         selectedCell.style.outlineOffset = '-2px';
-      } else if (!t.closest('#alignToolbar')) {
-        if (selectedCell) { selectedCell.style.outline = ''; selectedCell = null; }
       }
 
       // 削除
@@ -271,7 +272,7 @@
       const tools = t.closest('.row-tools');
       if (tools) {
         e.preventDefault(); e.stopPropagation();
-        // 将来のメニュー用（今は何もしない）
+        // 将来のメニュー挿入予定
         return;
       }
 
@@ -282,24 +283,21 @@
         const rowsEl = $('#rows');
         if (!rowsEl || !dayKey) return;
 
-        const slot = swapBtn.closest('.swap-slot');
-        const upper = slot?.previousElementSibling;   // 上の行
-        const lower = slot?.nextElementSibling;       // 下の行
+        const slot  = swapBtn.closest('.swap-slot');
+        const upper = slot?.previousElementSibling;
+        const lower = slot?.nextElementSibling;
         if (!upper || !lower) return;
         if (!upper.classList.contains('row-group')) return;
         if (!lower.classList.contains('row-group')) return;
 
-        // 直前フォーカス列（あれば保持）
+        // アクティブ列の保持
         const activeCell = document.activeElement?.closest('.cell[data-field]');
         const activeField = activeCell?.dataset?.field || null;
 
-        // 並べ替え：lower を upper の前へ（= 上下入替）
+        // lower を upper の前に → 上下入替
         rowsEl.insertBefore(lower, upper);
 
-        // 並べ替え後、スロットを全再構成
         rebuildSwapSlots();
-
-        // フォーカスの復帰（同じ列）
         if (activeField) {
           const target = lower.querySelector(`.cell[data-field="${activeField}"]`);
           target?.focus();
@@ -323,12 +321,15 @@
       }
     });
 
-    // 配置ツールバー（左/中/右）
+    // ② ヘッダー左の「書式（左/中/右）」ボタン
     document.body.addEventListener('click', (e) => {
-      const btn = e.target.closest('#alignToolbar button[data-align]');
-      if (!btn || !selectedCell) return;
+      const btn = e.target.closest('#inlineAlign button[data-align]');
+      if (!btn) return;
+      if (!selectedCell) return; // どのセルに適用するかは選択式
+
       const align = btn.dataset.align;
       applyAlign(selectedCell, align);
+
       const dayKey = getDayKeyFromHash();
       if (dayKey) saveRows(dayKey);
     });
@@ -367,7 +368,7 @@
         sel.removeAllRanges();
         sel.addRange(range);
 
-        // 区間/備考なら選択見た目も更新
+        // 選択見た目の更新
         if (ALIGN_FIELDS.has(next.dataset.field)) {
           if (selectedCell) selectedCell.style.outline = '';
           selectedCell = next;
@@ -382,8 +383,8 @@
       }, 0);
     });
 
-    // 印刷
-    document.getElementById('btnPrint')?.addEventListener('click', () => window.print());
+    // ウィンドウリサイズ時は sticky オフセットを再計算（④）
+    window.addEventListener('resize', setStickyTopOffset);
   }
 
   // ========= 起動 =========
