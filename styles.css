@@ -207,3 +207,51 @@ main{
   .app-header{ display:none; }
   main{ max-width:none; margin:0; padding:0 18mm; }
 }
+/* セル内の行（1行＝1ブロック） */
+.cell .ln{
+  display: block;
+  width: 100%;
+}
+
+/* 行ごとの水平揃え（line 単位） */
+.ln.align-left  { text-align: left; }
+.ln.align-center{ text-align: center; }
+.ln.align-right { text-align: right; }
+
+/* セルは縦に行を並べる（既存の flex 水平センタリングは行内の text-align に委譲） */
+.row-group .cell{
+  display: flex;
+  flex-direction: column;   /* ← 行を縦に積む */
+  align-items: stretch;     /* 行 .ln は幅いっぱい */
+  justify-content: center;  /* 縦方向の中央寄せ（不要なら normal に） */
+}
+
+/* 選択中行の視覚強調（任意） */
+.ln.is-selected{
+  outline: 2px solid #0a7cff;
+  outline-offset: -2px;
+}
+
+/* 右下の揃えツールバー（既にお持ちならそのまま流用可） */
+.align-toolbar{
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 9999;
+  display: flex;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.12);
+}
+.align-toolbar.hidden{ display:none; }
+.align-toolbar button{
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  background: #f8f8f8;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.align-toolbar button:hover{ background:#eee; }
