@@ -1,26 +1,25 @@
 :root{
-  /* 完全黒/白のみを使用 */
-  --ink:#000;           /* 文字色（黒） */
-  --grid:#000;          /* 罫線色（黒） */
-  --bg:#fff;            /* 背景（白） */
-  --muted:#000;         /* ここも黒に揃える */
+  /* 完全白黒 */
+  --ink:#000;           /* 文字 */
+  --grid:#000;          /* 罫線 */
+  --bg:#fff;            /* 背景 */
 
-  /* 列幅（先頭行/追加行で共通） */
+  /* 列幅（ヘッダ/行で共通） */
   --col-section: 1.6fr; /* 区間・場所 */
-  --col-part:    0.92fr;/* 大胴〜笛（均等） */
+  --col-part:    0.92fr;/* 大胴〜笛 */
   --col-notes:   1.4fr; /* 備考 */
 
-  /* 行の高さ（2段構成の基準） */
-  --h-unit: 36px;                     /* 1段の高さ */
-  --header-h: calc(var(--h-unit) / 2);/* 先頭行は半分の高さ */
+  /* 行高 */
+  --h-unit: 36px;                     /* 1段 */
+  --header-h: calc(var(--h-unit) / 2);/* 先頭行は半分 */
 
-  /* sticky の top（JSから代入） */
-  --sticky-top-toolbar:   0px;  /* タブ直下にツールバー */
-  --sticky-top-tablehead: 0px;  /* ツールバー直下に先頭行 */
+  /* sticky用オフセット（JSが代入） */
+  --sticky-top-toolbar:   0px; /* タブ直下にツールバー */
+  --sticky-top-tablehead: 0px; /* ツールバー直下に先頭行 */
+  --toolbar-h: 44px;           /* タイトル帯の実高（JSで上書き） */
 }
 
 *{ box-sizing:border-box; }
-
 body{
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
   margin:0;
@@ -28,105 +27,61 @@ body{
   background:var(--bg);
 }
 
-/* =========================
-   ① タブ（アプリヘッダ）最上段に固定
-   ========================= */
+/* ========== タブ（アプリヘッダ）最上段に固定 ========== */
 .app-header{
   position: sticky;
   top: 0;
-  z-index: 100;            /* 最前面（下の帯を覆う） */
-  background:#fff;         /* 透け防止：白で塗る */
-  border-bottom:1px solid #000; /* 黒の1px */
+  z-index: 100;
+  background:#fff;
+  border-bottom:1px solid #000;
   padding:12px 16px;
 }
-.tabs{
-  display:flex;
-  gap:8px;
-  align-items:center;
-  margin-top:8px;
-  flex-wrap:wrap;
-}
+.tabs{ display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; }
 .tab{
   padding:6px 10px;
-  border:1px solid #000;      /* 枠も黒 */
+  border:1px solid #000;
   border-radius:8px;
   text-decoration:none;
-  color:#000;                  /* 文字黒 */
+  color:#000;
   background:#fff;
 }
-.tab.active{
-  /* タブの配色を黒/白で表現（必要なら後で青に戻せます） */
-  background:#000;
-  color:#fff;
-  border-color:#000;
-}
+.tab.active{ background:#000; color:#fff; border-color:#000; }
 .print{ margin-left:auto; }
 
-main{
-  padding:16px;
-  max-width:960px;
-  margin:0 auto;
-}
+main{ padding:16px; max-width:960px; margin:0 auto; }
+.note{ color:#000; }
 
-/* =========================
-   ② タイトル＆書式ボタン（タブ直下に固定）
-   ========================= */
+/* ========== タイトル＆書式ボタン：タブ直下に固定 ========== */
 .section-toolbar{
   position: sticky;
   top: var(--sticky-top-toolbar);
   z-index: 90;
-  background:#fff; /* 透け防止：白で全面塗る */
-  /* 下枠線は引かない（二重線化の原因になるため） */
-  border-bottom:none;
-
-  /* 左右の余白エリアまで白で覆って、下のボタンを隠す */
-  box-shadow:
-    100vmax 0 0 0 #fff,  /* 右側を白で広く覆う */
-    -100vmax 0 0 0 #fff; /* 左側を白で広く覆う */
-
+  background:#fff;       /* 透け防止 */
+  border-bottom:none;    /* 二重線防止 */
   max-width:960px;
   margin:0 auto;
   min-height:44px;
+  position: sticky;
 }
 .toolbar-left{
   position:absolute;
-  left:0;
-  top:50%;
-  transform:translateY(-50%);
-  display:flex;
-  gap:8px;
-  align-items:center;
+  left:0; top:50%; transform:translateY(-50%);
+  display:flex; gap:8px; align-items:center;
 }
-.align-inline button,
-.btn-add{
-  padding:6px 10px;
-  border:1px solid #000;   /* 黒の1px */
-  background:#fff;
-  color:#000;
-  border-radius:8px;
-  cursor:pointer;
+.align-inline button, .btn-add{
+  padding:6px 10px; border:1px solid #000; border-radius:8px;
+  background:#fff; color:#000; cursor:pointer;
 }
-.align-inline button:hover,
-.btn-add:hover{
-  background:#fff;         /* 黒白のみ：色変化なし */
-}
+.align-inline button:hover, .btn-add:hover{ background:#fff; }
 
-/* 表の幅に対し中央 */
 .sheet-title{
-  margin:8px 0;
-  text-align:center;
-  font-size:28px;
-  font-weight:700;
-  color:#000;
+  margin:8px 0; text-align:center; font-size:28px; font-weight:700; color:#000;
 }
 
-/* =========================
-   Excel風：外枠＋格子
-   ========================= */
+/* ========== Excel風：外枠＋格子 ========== */
 
-/* 列定義（ヘッダ/行で共通） */
-.first-row-table,
-.row-group{
+/* 列定義（ヘッダ/行） */
+.first-row-table, .row-group{
   grid-template-columns:
     var(--col-section)
     var(--col-part) var(--col-part) var(--col-part)
@@ -134,184 +89,96 @@ main{
     var(--col-notes);
 }
 
-/* =========================
-   ③ 先頭行（表ヘッダ）：ツールバー直下に固定
-   ========================= */
+/* 先頭行（表ヘッダ）：ツールバー直下に固定（純黒1pxの上枠線） */
 .first-row-table{
   display:grid;
-
-  /* 外枠：上/左/右とも黒の1px（下はデータ側に任せる） */
-  border-top:1px solid #000;   /* ← 純黒の1px。太線原因の“前段の線”は無しにしている */
+  border-top:1px solid #000;
   border-left:1px solid #000;
   border-right:1px solid #000;
   border-bottom:none;
-
-  margin:0;
-  column-gap:0;
-  row-gap:0;
-
+  margin:0; column-gap:0; row-gap:0;
   position: sticky;
   top: var(--sticky-top-tablehead);
   z-index: 80;
   background:#fff;
-
-  /* ヘッダの左右の外側（ボタン走行レーン）も白で覆って隠す */
-  box-shadow:
-    100vmax 0 0 0 #fff,    /* 右側の覆い */
-    -100vmax 0 0 0 #fff;   /* 左側の覆い */
 }
 
-/* ヘッダセル：下線は全セル、縦線は“最後以外” */
+/* 先頭行セル：下線は全セル、縦線は最後以外 */
 .first-row-table .cell{
   border-bottom:1px solid #000;
-  padding:0 12px;
-  min-height:var(--header-h);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  font-size:15px;
-  color:#000;
-  background:#fff;
-  white-space:nowrap;
+  padding:0 12px; min-height:var(--header-h);
+  display:flex; align-items:center; justify-content:center;
+  text-align:center; font-size:15px; color:#000; background:#fff; white-space:nowrap;
 }
-.first-row-table .cell:not(:last-child){
-  border-right:1px solid #000;
-}
+.first-row-table .cell:not(:last-child){ border-right:1px solid #000; }
 
-/* ---- データ行群（スクロールで動くのはここだけ） ---- */
+/* データ行コンテナ（スクロールで動くのはここだけ） */
 .rows{
-  position:relative;   /* スタッキング文脈：下層 */
-  z-index: 1;
-  border-left:1px solid #000;
-  border-right:1px solid #000;
+  position:relative; z-index:1;
+  border-left:1px solid #000; border-right:1px solid #000;
   margin-top:0;
 }
 
-/* 1行＝2段グリッド */
+/* データ行（2段グリッド） */
 .row-group{
-  display:grid;
-  grid-template-rows: 1fr 1fr;
+  display:grid; grid-template-rows:1fr 1fr;
   border-bottom:1px solid #000;
-  position:relative;               /* 右外側ボタンの基準 */
-  column-gap:0;
-  row-gap:0;
+  position:relative; column-gap:0; row-gap:0;
 }
-
-/* セル共通 */
 .row-group .cell{
   border-right:1px solid #000;
-  padding:10px 12px;
-  font-size:15px;
-  color:#000;
-  background:#fff;
-  display:flex;
-  flex-direction:column;
-  align-items:stretch;
-  justify-content:center;
+  padding:10px 12px; font-size:15px; color:#000; background:#fff;
+  display:flex; flex-direction:column; align-items:stretch; justify-content:center;
   min-height:var(--h-unit);
 }
+.row-group .cell:last-of-type{ border-right:none; }
+.row-group .span2{ grid-row:1 / span 2; min-height:calc(var(--h-unit)*2); }
+.cell.split-top{ border-top:1px solid #000; }
 
-/* 右端セル（備考）は右線なし → 外枠に任せる */
-.row-group .cell:last-of-type{
-  border-right:none;
+/* 右外側ボタン（行の垂直中央）—固定帯より下層にする */
+.row-tools, .row-del{
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:34px; height:34px; border:1px solid #000; border-radius:8px;
+  background:#fff; color:#000; cursor:pointer; display:grid; place-items:center;
+  font-size:16px; line-height:1; z-index:5;
 }
+.row-tools{ right:-44px; } .row-del{ right:-84px; }
 
-/* 2段ぶち抜き（大胴・中胴・側胴・備考） */
-.row-group .span2{
-  grid-row: 1 / span 2;
-  min-height: calc(var(--h-unit) * 2);
-}
-
-/* 鉦・笛：下段に仕切り線 */
-.cell.split-top{
-  border-top:1px solid #000;
-}
-
-/* =========================
-   右外側：ツール／削除（行の垂直中央）
-   ========================= */
-.row-tools,
-.row-del{
-  position:absolute;
-  top:50%;
-  transform:translateY(-50%);
-  width:34px;
-  height:34px;
-  border:1px solid #000;   /* 黒の1px */
-  border-radius:8px;
-  background:#fff;
-  color:#000;
-  cursor:pointer;
-  display:grid;
-  place-items:center;
-  font-size:16px;
-  line-height:1;
-  z-index:5;               /* ← 固定帯(z=80/90/100)の下に必ず隠れる */
-}
-.row-tools{ right:-44px; }
-.row-del  { right:-84px; }
-
-/* ホバー変化は色無し（黒白固定） */
-.row-tools:hover,
-.row-del:hover{
-  background:#fff;
-}
-
-/* =========================
-   行間境界スワップ（⇅）
-   ========================= */
-.swap-slot{
-  position:relative;
-  height:0;
-}
+/* 行間スワップ（⇅） */
+.swap-slot{ position:relative; height:0; }
 .swap-slot .row-swap{
-  position:absolute;
-  left:-44px;
-  top:-17px;           /* 34px の半分だけ上へ */
-  width:34px; height:34px;
-  border:1px solid #000;
-  border-radius:8px;
-  background:#fff;
-  color:#000;
-  cursor:pointer;
-  display:grid; place-items:center;
-  font-size:16px; line-height:1;
-  z-index:5;          /* ← 固定帯より確実に下 */
+  position:absolute; left:-44px; top:-17px;
+  width:34px; height:34px; border:1px solid #000; border-radius:8px;
+  background:#fff; color:#000; cursor:pointer; display:grid; place-items:center;
+  font-size:16px; line-height:1; z-index:5;
 }
 
-/* 画面が狭いときは内側へ（ボタン位置調整） */
-@media (max-width: 520px){
-  .row-tools{ right:6px; }
-  .row-del  { right:46px; }
+/* スマホ時はボタンを内側へ */
+@media (max-width:520px){
+  .row-tools{ right:6px; } .row-del{ right:46px; }
   .swap-slot .row-swap{ left:6px; }
 }
 
-/* 印刷（黒線維持） */
-@media print{
-  :root{ --grid:#000; --ink:#000; }
-  .app-header{ position:static; }
-  .section-toolbar{ position:static; box-shadow:none; }
-  .first-row-table{ position:static; }
-  main{ max-width:none; margin:0; padding:0 18mm; }
+/* ====== 固定帯の左右ガターも白で覆って“ボタンを確実に隠す”マスク ====== */
+/* タイトル帯のフル幅マスク（タブの直下からツールバー高さぶん） */
+body::before{
+  content:''; position:fixed;
+  top: var(--sticky-top-toolbar);
+  left:0; right:0; height: var(--toolbar-h);
+  background:#fff; z-index:89; pointer-events:none;
 }
-/* ============= 先頭行の“覆い帯”を追加して、左右ボタンを必ず隠す ============= */
-/* 先頭行と同じY位置・同じ高さで、画面左右いっぱいを白で覆う */
-.first-row-table::before{
-  content:'';
-  position: fixed;                         /* 画面全幅に広げる */
-  top: var(--sticky-top-tablehead);        /* 先頭行の sticky top と同じ位置 */
-  left: 0;
-  right: 0;
-  height: var(--header-h);                 /* 先頭行の高さと一致 */
-  background:#fff;                         /* 白で完全に覆う（白黒設計と一致） */
-  z-index: 79;                             /* 先頭行(z=80)の直下。ボタン(z=5)より上 */
-  pointer-events: none;                    /* クリックを下に通す（UIを邪魔しない） */
+/* 先頭行のフル幅マスク（先頭行高さぶん） */
+body::after{
+  content:''; position:fixed;
+  top: var(--sticky-top-tablehead);
+  left:0; right:0; height: var(--header-h);
+  background:#fff; z-index:79; pointer-events:none;
 }
 
-/* 念のため：ボタンは固定帯より必ず下の層に置く（既に指定済みでも再宣言OK） */
-.row-tools,
-.row-del,
-.swap-slot .row-swap{
-  z-index: 5;     /* 固定帯：タブ=100, ツールバー=90, 先頭行=80 */
+/* 印刷（固定解除・黒線維持） */
+@media print{
+  .app-header, .section-toolbar, .first-row-table{ position:static; }
+  .section-toolbar, .first-row-table{ box-shadow:none; }
+  body::before, body::after{ display:none; }
+  main{ max-width:none; margin:0; padding:0 18mm; }
 }
