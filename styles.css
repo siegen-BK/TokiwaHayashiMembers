@@ -119,12 +119,12 @@ main{
   border-right:1px solid var(--grid);
 }
 
-/* ---- 行群 ---- */
+/* ---- 行群（追加行のまとまり） ---- */
 .rows{
   border-left:1px solid var(--grid);
   border-right:1px solid var(--grid);
   margin-top:0;
-  /* overflow-x:hidden; 必要時のみ */
+  position:relative; /* 境界ボタンの基準ではないが、保険 */
 }
 
 /* ---- 追加行（1行＝2段グリッド） ---- */
@@ -132,7 +132,7 @@ main{
   display:grid;
   grid-template-rows: 1fr 1fr;
   border-bottom:1px solid var(--grid);
-  position:relative;               /* 右/左の外側ボタンの基準 */
+  position:relative;               /* 右外側ボタンの基準 */
   column-gap:0;
   row-gap:0;
 }
@@ -180,39 +180,6 @@ main{
 }
 
 /* =========================
-   行内テキスト（.ln）は今は未使用でも残置OK
-   ========================= */
-.cell .ln{ display:block; width:100%; }
-.ln.align-left  { text-align:left; }
-.ln.align-center{ text-align:center; }
-.ln.align-right { text-align:right; }
-.ln.is-selected{ outline:2px solid #0a7cff; outline-offset:-2px; }
-
-/* 右下の文字揃えツールバー（選択時だけ表示） */
-.align-toolbar{
-  position:fixed;
-  right:14px;
-  bottom:14px;
-  z-index:9999;
-  display:flex;
-  gap:8px;
-  background:#fff;
-  border:1px solid #ddd;
-  border-radius:10px;
-  padding:8px;
-  box-shadow:0 6px 18px rgba(0,0,0,.12);
-}
-.align-toolbar.hidden{ display:none; }
-.align-toolbar button{
-  padding:6px 10px;
-  border:1px solid #ccc;
-  background:#f8f8f8;
-  border-radius:8px;
-  cursor:pointer;
-}
-.align-toolbar button:hover{ background:#eee; }
-
-/* =========================
    右外側：ツール／削除（行の垂直中央）
    ========================= */
 .row-tools,
@@ -232,7 +199,6 @@ main{
   line-height:1;
   z-index:10;
 }
-/* 並び：行右端 | ツール | 削除 */
 .row-tools{ right:-44px; }
 .row-del  { right:-84px; }
 
@@ -240,13 +206,19 @@ main{
 .row-del:hover  { background:#ffecec; border-color:#ff6b6b; }
 
 /* =========================
-   左外側：入れ替え（⇅）
+   行間境界スワップ（⇅）
    ========================= */
-.row-swap{
+/* 行と行の“境界”に挿入するスロット（高さ0） */
+.swap-slot{
+  position:relative;
+  height:0;
+}
+
+/* スロット内のボタンを境界の中点に重ねる */
+.swap-slot .row-swap{
   position:absolute;
-  top:50%;
   left:-44px;
-  transform:translateY(-50%);
+  top:-17px;            /* ボタン(34px)の半分だけ上へ */
   width:34px; height:34px;
   border:1px solid #cfcfcf;
   border-radius:8px;
@@ -254,18 +226,18 @@ main{
   cursor:pointer;
   display:grid; place-items:center;
   font-size:16px; line-height:1;
-  z-index:10;
+  z-index:11;          /* 行右ボタンより手前に */
 }
-.row-swap:hover{
+.swap-slot .row-swap:hover{
   background:#eef7ff;
   border-color:#0a7cff;
 }
 
-/* 画面が狭いときは内側へ（右はツール→削除の順で内側へ） */
+/* 画面が狭いときは内側へ */
 @media (max-width: 520px){
-  .row-tools{ right:6px;  }
+  .row-tools{ right:6px; }
   .row-del  { right:46px; }
-  .row-swap { left:6px;   }
+  .swap-slot .row-swap{ left:6px; }
 }
 
 /* 印刷 */
