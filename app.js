@@ -20,8 +20,8 @@
     return (k === 'd1' || k === 'd2' || k === 'd3') ? k : DEFAULT_DAY;
   }
 
-  function titleKey(dayKey) { return `${STORAGE_PREFIX}title:${dayKey}`; }
-  function rowsKey(dayKey)  { return `${STORAGE_PREFIX}rows:${dayKey}`; }
+  const titleKey = (dayKey) => `${STORAGE_PREFIX}title:${dayKey}`;
+  const rowsKey  = (dayKey) => `${STORAGE_PREFIX}rows:${dayKey}`;
 
   function safeJsonParse(text, fallback) {
     try { return JSON.parse(text); } catch { return fallback; }
@@ -51,54 +51,76 @@
         <!-- 備考（2段ぶち抜き）＝フリー入力＆行ごと揃え -->
         <div class="cell span2" style="grid-column:7; grid-row:1 / span 2;" contenteditable="true" data-field="notes"></div>
 
-        <!-- 行削除 -->
-        <button class="row-del" type="button" title="この行を削除">🗑</button>
+        <!-- 行削除（右余白） -->
+        <button class="row-del"   type="button" title="この行を削除">🗑</button>
+        <!-- 区間 2段結合/解除（左余白） -->
+        <button class="row-merge" type="button" title="区間を2段結合/解除">⇅</button>
       </div>
     `;
   }
 
   // ========= Line（行）ユーティリティ =========
-  // .cell 内を <span class="ln"> 行 にラップ（初回のみ・既に .ln があれば触らない）
+  // エスケープ
+  const esc = (s) => (s || '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+
+  // .cell 内の素の改行テキストを <span class="ln align-center">…</span> にラップ（既に .ln があれば何もしない）
   function normalizeLines(cell) {
-    if (cell.querySelector('.ln')) return; // 既に行ラップ済みなら何もしない
+    if (cell.querySelector('.ln')) return;
     const raw = cell.innerText.replace(/\r/g, '');
     const lines = raw.split('\n');
-    const html = lines.map(s => {
-      const esc = s
-        .replace(/&/g,'&amp;')
-        .replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;');
-      // 初期は中央揃え
-      return `<span class="ln align-center">${esc}</span>`;
-    }).join('');
-    cell.innerHTML = html;
+    cell.innerHTML = lines.map(s => `<span class="ln align-center">${esc(s.trim())}</span>`).join('');
   }
 
-  // 既存 .ln の align をできるだけ保持しつつ、cell.innerText を行ラップに再構成
+  // 既存 .ln の align を保持しつつ、innerText から再構成
   const _rebuildingCells = new WeakSet();
   function rebuildLines(cell) {
     if (_rebuildingCells.has(cell)) return;
     _rebuildingCells.add(cell);
 
     const prevAligns = Array.from(cell.querySelectorAll('.ln')).map(ln => {
-      if (ln.classList.contains('align-left')) return 'left';
+      if (ln.classList.contains('align-left'))  return 'left';
       if (ln.classList.contains('align-right')) return 'right';
       return 'center';
     });
 
-    const text = cell.innerText.replace(/\r/g,'');
+    const text  = cell.innerText.replace(/\r/g,'');
     const lines = text.split('\n');
-    const html = lines.map((s,i) => {
+    cell.innerHTML = lines.map((s,i) => {
       const a = prevAligns[i] || 'center';
-      const esc = s
-        .replace(/&/g,'&amp;')
-        .replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;');
-      return `<span class="ln align-${a}">${esc}</span>`;
+      return `<span class="ln align-${a}">${esc(s.trim())}</span>`;
     }).join('');
-    cell.innerHTML = html;
 
     _rebuildingCells.delete(cell);
+  }
+
+  // .cell から [{t,a}, …] を取得（.ln 優先、無ければ1行）
+  function getLinesFromCell(cell) {
+    const lns = cell.querySelectorAll('.ln');
+    if (lns.length) {
+      return Array.from(lns).map(ln => ({
+        t: (ln.textContent || '').trim(),
+        a: ln.classList.contains('align-left') ? 'left' :
+           ln.classList.contains('align-right') ? 'right' : 'center'
+      }));
+    } else {
+      const t = (cell.textContent || '').trim();
+      const a =
+        cell.classList.contains('align-left') ? 'left' :
+        cell.classList.contains('align-right') ? 'right' : 'center';
+      return t ? [{ t, a }] : [];
+    }
+  }
+
+  // [{t,a}] を .cell にレンダリング
+  function setLinesToCell(cell, lines) {
+    if (!lines || !lines.length) {
+      cell.innerHTML = '';
+      return;
+    }
+    cell.innerHTML = lines.map(({t,a}) => `<span class="ln align-${a || 'center'}">${esc(t || '')}</span>`).join('');
   }
 
   // キャレット位置から現在 .ln を取得
@@ -118,7 +140,7 @@
 
   // ========= 保存・復元 =========
   // 形式：
-  // - 新形式：{ lines:[ {t:'文字', a:'left|center|right'}, ... ] }
+  // - 新形式：{ lines:[ {t:'文字', a:'left|center|right'}, ... ], __flags? }
   // - 旧形式：{ t:'文字', a:'...' } または '文字列'
   function serializeRows() {
     const rowsEl = $('#rows');
@@ -126,24 +148,16 @@
     return Array.from(rowsEl.querySelectorAll('.row-group')).map(group => {
       const obj = {};
       group.querySelectorAll('[data-field]').forEach(cell => {
-        const lns = cell.querySelectorAll('.ln');
-        if (lns.length) {
-          obj[cell.dataset.field] = {
-            lines: Array.from(lns).map(ln => ({
-              t: (ln.textContent || '').trim(),
-              a: ln.classList.contains('align-left') ? 'left' :
-                 ln.classList.contains('align-right') ? 'right' : 'center'
-            }))
-          };
+        const lines = getLinesFromCell(cell);
+        if (lines.length) {
+          obj[cell.dataset.field] = { lines };
         } else {
-          // .ln が無いセルは従来形式で保存
-          const text = (cell.textContent || '').trim();
-          const align =
-            cell.classList.contains('align-left') ? 'left' :
-            cell.classList.contains('align-right') ? 'right' : 'center';
-          obj[cell.dataset.field] = { t: text, a: align };
+          // 空は空で保持
+          obj[cell.dataset.field] = { lines: [] };
         }
       });
+      // 区間2段結合フラグ
+      obj.__flags = { sectionMerged: group.classList.contains('merge-section') };
       return obj;
     });
   }
@@ -172,15 +186,7 @@
 
         // 1) 新形式：行配列
         if (v && Array.isArray(v.lines)) {
-          const html = v.lines.map(item => {
-            const t = (item.t || '')
-              .replace(/&/g,'&amp;')
-              .replace(/</g,'&lt;')
-              .replace(/>/g,'&gt;');
-            const a = item.a || 'center';
-            return `<span class="ln align-${a}">${t}</span>`;
-          }).join('');
-          cell.innerHTML = html;
+          setLinesToCell(cell, v.lines);
           return;
         }
 
@@ -193,21 +199,28 @@
           text  = v.t || '';
           align = v.a || 'center';
         }
-
         if (text) {
-          const esc = text
-            .replace(/&/g,'&amp;')
-            .replace(/</g,'&lt;')
-            .replace(/>/g,'&gt;');
-          cell.innerHTML = `<span class="ln align-${align}">${esc}</span>`;
+          setLinesToCell(cell, [{ t: text, a: align }]);
         } else {
           cell.innerHTML = '';
         }
       });
+
+      // 区間結合の復元（TopにBottomをマージ）
+      const merged = rowObj.__flags && rowObj.__flags.sectionMerged;
+      if (merged) {
+        const top    = group.querySelector('[data-field="sectionTop"]');
+        const bottom = group.querySelector('[data-field="sectionBottom"]');
+        const topLines    = getLinesFromCell(top);
+        const bottomLines = getLinesFromCell(bottom);
+        setLinesToCell(top, [...topLines, ...bottomLines]);
+        setLinesToCell(bottom, []);
+        group.classList.add('merge-section');
+      }
     }
   }
 
-  // デバウンス保存（入力頻度が高いので軽く間引く）
+  // デバウンス保存
   let saveTimer = null;
   function scheduleSave(dayKey) {
     clearTimeout(saveTimer);
@@ -256,7 +269,7 @@
 
         <div id="rows" class="rows"></div>
       </section>
-    `;
+    ";
 
     // タイトル復元＆編集
     const h = $('#sectionTitleHeading');
@@ -277,7 +290,7 @@
     // 行データ復元
     restoreRows(dayKey);
 
-    // ツールバー用DOMを1回だけ用意
+    // ツールバー設置
     ensureAlignToolbar();
   }
 
@@ -289,9 +302,9 @@
       return;
     }
 
-    window.route('/cover', () => renderCover());
+    window.route('/cover',   () => renderCover());
     window.route('/section', (rest) => renderSection(rest));
-    window.route('/404', () => { $('#view').textContent = '404'; });
+    window.route('/404',     () => { $('#view').textContent = '404'; });
 
     if (!location.hash) location.hash = '#/cover';
     window.navigate();
@@ -301,12 +314,12 @@
   let selectedLine = null; // 現在選択中の .ln
 
   function initEvents() {
-    // クリック（追加・削除・行選択）
+    // クリック（追加・削除・区間結合・行選択）
     $('#view').addEventListener('click', (e) => {
       const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
       const dayKey = getDayKeyFromHash();
 
-      // 1) 区間/備考セル内でクリック → 行選択＆ツールバー表示
+      // 0) 区間セル（Top/Bottom）・備考セル → 行選択＆ツールバー表示
       const targetEditableCell = t.closest(
         '#rows .cell[contenteditable="true"][data-field="sectionTop"], ' +
         '#rows .cell[contenteditable="true"][data-field="sectionBottom"], ' +
@@ -325,7 +338,37 @@
         // ツールバー表示
         const tb = document.getElementById('alignToolbar');
         if (tb) tb.classList.remove('hidden');
+        return;
+      }
 
+      // 1) 区間 結合/解除 トグル
+      const mergeBtn = t.closest('.row-merge');
+      if (mergeBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const group  = mergeBtn.closest('.row-group');
+        const top    = group.querySelector('[data-field="sectionTop"]');
+        const bottom = group.querySelector('[data-field="sectionBottom"]');
+
+        const mergedNow = group.classList.toggle('merge-section');
+
+        if (mergedNow) {
+          // 結合：TopLines + BottomLines → Top、Bottom は空
+          const topLines    = getLinesFromCell(top);
+          const bottomLines = getLinesFromCell(bottom);
+          setLinesToCell(top, [...topLines, ...bottomLines]);
+          setLinesToCell(bottom, []);
+        } else {
+          // 解除：Top を 1行目→Top、2行目以降→Bottom
+          const lines = getLinesFromCell(top);
+          const first = lines[0] ? [lines[0]] : [];
+          const rest  = lines.slice(1);
+          setLinesToCell(top, first);
+          setLinesToCell(bottom, rest);
+        }
+
+        if (dayKey) saveRows(dayKey);
         return;
       }
 
@@ -354,7 +397,7 @@
         return;
       }
 
-      // 4) その他をクリック → ツールバーを隠す＆選択解除
+      // 4) その他 → ツールバーを隠す＆選択解除
       if (!t.closest('#alignToolbar')) {
         const tb = document.getElementById('alignToolbar');
         if (tb) tb.classList.add('hidden');
@@ -386,8 +429,7 @@
     // 右下ツールバーで「左/中/右」を適用
     document.body.addEventListener('click', (e) => {
       const btn = e.target.closest('#alignToolbar button[data-align]');
-      if (!btn) return;
-      if (!selectedLine) return;
+      if (!btn || !selectedLine) return;
 
       const align = btn.dataset.align;
       setLineAlign(selectedLine, align);
