@@ -17,6 +17,15 @@
 --sticky-top-toolbar:   0px;  /* タブ直下にツールバー */
 --sticky-top-tablehead: 0px;  /* ツールバー直下に先頭行 */
 --toolbar-h: 44px;            /* ツールバー実高（JSで上書き） */
+
+  /* アプリヘッダー（タブ）の高さ基準 */
+  --app-header-h: 80px; 
+
+  /* ツールバーの開始位置 ＝ アプリヘッダーの高さ */
+  --sticky-top-toolbar: var(--app-header-h);
+
+  /* 見出し行の開始位置 ＝ アプリヘッダー ＋ ツールバーの高さ */
+  --sticky-top-tablehead: calc(var(--app-header-h) + var(--toolbar-h));
 }
 
 *{ box-sizing:border-box; }
@@ -79,7 +88,7 @@ margin:0 auto;
   ========================================================= */
 .section-toolbar{
 position: sticky;
-top: var(--sticky-top-toolbar);
+top: var(--app-header-h);
 z-index: 90;
 background:#fff;
 border-bottom: none;     /* 二重線を作らない */
@@ -149,8 +158,10 @@ margin:0;
 column-gap:0;
 row-gap:0;
 
-position: sticky;
+position: fixed;
 top: var(--sticky-top-tablehead);
+  left: 50%;
+  transform: translateX(-50%);
 z-index: 80;
 background:#fff;
 }
