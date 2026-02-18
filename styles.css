@@ -7,21 +7,17 @@
   /* ===== 列幅（ヘッダ/行で共通） ===== */
   --col-section: 1.6fr;  /* 区間・場所 */
   --col-part:    0.92fr; /* 大胴〜笛 */
-  --col-notes:   1.4fr;  /* 備考 */
+  --col-notes:   1.4fr;  /* 備考  */
 
   /* ===== 行高 ===== */
   --h-unit: 36px;                       /* 1段 */
-  --header-h: calc(var(--h-unit) / 2);  /* 先頭行は半分(18px) */
+  --header-h: calc(var(--h-unit) / 2); /* 先頭行は半分(18px) */
 
-  /* ===== 固定（fixed）連動用：JSが代入 ===== */
-  --app-header-h: 80px;         /* アプリヘッダー（タブ）実高の基準 */
+  /* ===== 固定（fixed）用：JSが代入 ===== */
+  --app-header-h: 80px;         /* アプリヘッダー実高 */
   --toolbar-h: 44px;            /* ツールバー実高 */
-  
-  /* ツールバーの固定位置 ＝ アプリヘッダーの高さ */
-  --sticky-top-toolbar: var(--app-header-h);
-  
-  /* 見出し行の固定位置 ＝ アプリヘッダー ＋ ツールバーの高さ */
-  --sticky-top-tablehead: calc(var(--app-header-h) + var(--toolbar-h));
+  --sticky-top-toolbar: 80px;   /* タブ直下にツールバー */
+  --sticky-top-tablehead: 124px; /* ツールバー直下に先頭行 */
 }
 
 * { box-sizing: border-box; }
@@ -37,7 +33,7 @@ body {
    固定帯 1: タブ（アプリヘッダ）最上段に固定
    ========================================================= */
 .app-header {
-  position: fixed; /* stickyから変更して固定を安定化 */
+  position: fixed; /* stickyから変更 */
   top: 0;
   left: 0;
   right: 0;
@@ -73,11 +69,11 @@ body {
 .print { margin-left: auto; }
 
 /* =========================================================
-   本文コンテナ：固定された3段の合計分、最初から余白を確保
+   本文コンテナ：3つの固定帯が浮いた分の余白を確保
    ========================================================= */
 main {
-  /* 余白 = 見出し行の固定位置 + 見出し行自体の高さ(H*2) + 枠線(2px) */
-  padding-top: calc(var(--sticky-top-tablehead) + (var(--header-h) * 2) + 2px);
+  /* 余白 = アプリヘッダ + ツールバー + 先頭行(H*2) + 上下枠線(2px) */
+  padding-top: calc(var(--app-header-h) + var(--toolbar-h) + (var(--header-h) * 2) + 2px);
   padding-left: 16px;
   padding-right: 16px;
   max-width: 960px;
@@ -85,229 +81,16 @@ main {
 }
 
 /* =========================================================
-   固定帯 2: タイトル＆書式＆追加（アプリヘッダー直下に固定）
+   固定帯 2: セクションツールバー（タブ直下に固定）
    ========================================================= */
 .section-toolbar {
-  position: fixed; /* 最初から固定 */
-  top: var(--app-header-h);
+  position: fixed; /* stickyから変更 */
+  top: var(--sticky-top-toolbar);
   left: 0;
   right: 0;
   z-index: 90;
   background: #fff;
-  border-bottom: none;
   width: 100%;
   max-width: 960px;
   margin: 0 auto;
-  min-height: 44px;
-}
-
-.toolbar-left {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.align-inline button,
-.btn-add {
-  padding: 6px 10px;
-  border: 1px solid #000;
-  border-radius: 8px;
-  background: #fff;
-  color: #000;
-  cursor: pointer;
-}
-
-.sheet-title {
-  margin: 8px 0;
-  text-align: center;
-  font-size: 28px;
-  font-weight: 700;
-  color: #000;
-}
-
-/* =========================================================
-   表（Excel風：列定義）
-   ========================================================= */
-.first-row-table,
-.row-group {
-  display: grid;
-  grid-template-columns:
-    var(--col-section)
-    var(--col-part) var(--col-part) var(--col-part)
-    var(--col-part) var(--col-part)
-    var(--col-notes);
-}
-
-/* =========================================================
-   固定帯 3: 先頭行（表ヘッダ）ツールバー直下に固定
-   ========================================================= */
-.first-row-table {
-  border-top: 1px solid #000;
-  border-left: 1px solid #000;
-  border-right: 1px solid #000;
-  border-bottom: none;
-  margin: 0;
-  column-gap: 0;
-  row-gap: 0;
-
-  position: fixed; /* 最初から固定 */
-  top: var(--sticky-top-tablehead);
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px); /* mainのpadding分を考慮 */
-  max-width: 928px;
-  z-index: 80;
-  background: #fff;
-}
-
-/* 先頭行セル */
-.first-row-table .cell {
-  border-bottom: 1px solid #000;
-  padding: 0 12px;
-  min-height: calc(var(--header-h) * 2); /* 実寸36px */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 15px;
-  color: #000;
-  background: #fff;
-  white-space: nowrap;
-}
-
-.first-row-table .cell:not(:last-child) {
-  border-right: 1px solid #000;
-}
-
-/* =========================================================
-   データ行
-   ========================================================= */
-.rows {
-  position: relative;
-  z-index: 1;
-  border-left: 1px solid #000;
-  border-right: 1px solid #000;
-  margin-top: 0;
-}
-
-.row-group {
-  grid-template-rows: 1fr 1fr;
-  border-bottom: 1px solid #000;
-  position: relative;
-}
-
-.row-group .cell {
-  border-right: 1px solid #000;
-  padding: 10px 12px;
-  font-size: 15px;
-  color: #000;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: center;
-  min-height: var(--h-unit);
-}
-
-.row-group .cell:last-of-type { border-right: none; }
-.row-group .span2 { grid-row: 1 / span 2; min-height: calc(var(--h-unit) * 2); }
-.cell.split-top { border-top: 1px solid #000; }
-
-/* =========================================================
-   操作ボタン類（右外側）
-   ========================================================= */
-.row-tools,
-.row-del {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 34px;
-  height: 34px;
-  border: 1px solid #000;
-  border-radius: 8px;
-  background: #fff;
-  z-index: 5;
-  display: grid;
-  place-items: center;
-}
-.row-tools { right: -44px; }
-.row-del   { right: -84px; }
-
-.swap-slot { position: relative; height: 0; }
-.swap-slot .row-swap {
-  position: absolute;
-  left: -44px;
-  top: -17px;
-  width: 34px;
-  height: 34px;
-  border: 1px solid #000;
-  border-radius: 8px;
-  background: #fff;
-  z-index: 5;
-  display: grid;
-  place-items: center;
-}
-
-/* =========================================================
-   白マスク（ボタン隠し用）：基準点から連動
-   ========================================================= */
-
-/* ツールバー部分をカバー */
-body::before {
-  content: '';
-  position: fixed;
-  top: var(--app-header-h);
-  left: 0;
-  right: 0;
-  height: var(--toolbar-h);
-  background: #fff;
-  z-index: 89;
-  pointer-events: none;
-}
-
-/* 見出し行部分をカバー */
-body::after {
-  content: '';
-  position: fixed;
-  top: var(--sticky-top-tablehead);
-  left: 0;
-  right: 0;
-  height: calc((var(--header-h) * 2) + 2px); 
-  background: #fff;
-  z-index: 79;
-  pointer-events: none;
-}
-
-/* モバイル対応 */
-@media (max-width: 520px) {
-  .row-tools { right: 6px; }
-  .row-del   { right: 46px; }
-  .swap-slot .row-swap { left: 6px; }
-}
-
-/* =========================================================
-   印刷設定（固定を解除して通常配置に戻す）
-   ========================================================= */
-@media print {
-  .app-header,
-  .section-toolbar,
-  .first-row-table {
-    position: static;
-    transform: none;
-    width: 100%;
-    max-width: none;
-  }
-  body::before,
-  body::after {
-    display: none;
-  }
-  main {
-    max-width: none;
-    margin: 0;
-    padding-top: 20px;
-  }
-}
+  min-height:
