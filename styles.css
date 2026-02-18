@@ -68,7 +68,8 @@ body{
 /* 本文コンテナ */
 main{
   padding:0;
-  margin:0;
+  max-width: calc(100% - 196px); /* 両側 98pxずつ余白 */
+  margin: 0 auto;
 }
 
 /* =========================================================
@@ -82,12 +83,14 @@ main{
   z-index: 90;
   background:#fff;
   border-bottom: none;     /* 二重線を作らない */
+  max-width: calc(100% - 196px); /* 両側 98pxずつ余白 */
+  margin: 0 auto;
   min-height:44px;
 }
 
 .toolbar-left{
   position:absolute;
-  left:0;
+  left:0; /* 左端寄せで良いとのこと */
   top:50%;
   transform:translateY(-50%);
   display:flex;
@@ -135,6 +138,7 @@ main{
 
 /* =========================================================
    固定帯 3: 先頭行（表ヘッダ）ツールバー直下に固定
+   - 上枠線は純黒1px
    ========================================================= */
 .first-row-table{
   border-top: 1px solid #000;
@@ -150,10 +154,9 @@ main{
   z-index: 80;
   background:#fff;
 
-  /* 中央揃え＋左右余白98px確保 */
-  max-width: calc(100% - 196px);
-  margin-left: auto;
-  margin-right: auto;
+  max-width: calc(100% - 196px); /* 両側98pxずつ空ける */
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 /* 先頭行セル */
@@ -186,10 +189,9 @@ main{
   border-right: 1px solid #000;
   margin-top:0;
 
-  /* 中央揃え＋左右余白98px確保 */
-  max-width: calc(100% - 196px);
-  margin-left: auto;
-  margin-right: auto;
+  max-width: calc(100% - 196px); /* 両側98pxずつ空ける */
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .row-group{
@@ -233,6 +235,7 @@ main{
 
 /* =========================================================
    右外側：ツール／削除（行の垂直中央）
+   - 固定帯より下層（z-index低め）
    ========================================================= */
 .row-tools,
 .row-del{
@@ -250,7 +253,7 @@ main{
   place-items:center;
   font-size:16px;
   line-height:1;
-  z-index:5;
+  z-index:5; /* 固定帯(z=80/90/100)に確実に隠れる */
 }
 .row-tools{ right:-44px; }
 .row-del  { right:-84px; }
@@ -265,7 +268,7 @@ main{
 .swap-slot .row-swap{
   position:absolute;
   left:-44px;
-  top:-17px;
+  top:-17px; /* 34px/2 */
   width:34px;
   height:34px;
   border:1px solid #000;
@@ -277,12 +280,16 @@ main{
   place-items:center;
   font-size:16px;
   line-height:1;
-  z-index:5;
+  z-index:5; /* 固定帯に隠れる */
 }
 
 /* =========================================================
-   ★固定帯の白マスク
+   ★重要：固定帯の“左右ガター含む”白マスク
+   - ボタンが先頭行より上に出ない（固定帯の裏に入って消える）
+   - 基準は「先頭行の下罫線」＝マスクは下線直上まで
    ========================================================= */
+
+/* ツールバー帯の白マスク（画面全幅） */
 body::before{
   content:'';
   position:fixed;
@@ -291,10 +298,11 @@ body::before{
   right:0;
   height: var(--toolbar-h);
   background:#fff;
-  z-index:89;
+  z-index:89;            /* ツールバー(90)の直下・先頭行(80)より上 */
   pointer-events:none;
 }
 
+/* 先頭行帯の白マスク（下罫線直上まで＝header-h - 1px） */
 body::after{
   content:'';
   position:fixed;
@@ -303,7 +311,7 @@ body::after{
   right:0;
   height: calc(var(--header-h) + 2px);
   background:#fff;
-  z-index:79;
+  z-index:79;            /* 先頭行(80)の直下。ボタン(5)より上 */
   pointer-events:none;
 }
 
