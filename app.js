@@ -239,8 +239,11 @@
 
     rowsEl.innerHTML = '';
     const raw = localStorage.getItem(rowsKey(dayKey));
-    const data = safeJsonParse(raw, []);
-    for (const rowObj of data) {
+    let data = safeJsonParse(raw, []);
+// 追加：もしデータが配列じゃなかったら空の配列にする
+if (!Array.isArray(data)) { data = []; }
+
+for (const rowObj of data) {
       rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
       const group = rowsEl.lastElementChild;
       group.querySelectorAll('[data-field]').forEach(cell => {
