@@ -1,7 +1,4 @@
 (() => {
-  // =========================
-  // 設定
-  // =========================
   const STORAGE_PREFIX = 'membersApp:';
   const DEFAULT_DAY = 'd1';
 
@@ -11,12 +8,7 @@
     d3: '2026年11月5日(水)',
   };
 
-  // メンバー保存キー
   const MEMBERS_KEY = `${STORAGE_PREFIX}members`;
-
-  // =========================
-  // ユーティリティ
-  // =========================
   const $ = (sel, root = document) => root.querySelector(sel);
 
   function safeJsonParse(text, fallback) {
@@ -34,7 +26,6 @@
   const titleKey = (dayKey) => `${STORAGE_PREFIX}title:${dayKey}`;
   const rowsKey  = (dayKey)  => `${STORAGE_PREFIX}rows:${dayKey}`;
 
-  // HTMLエスケープ（members表表示用）
   function escapeHtml(s){
     return (s ?? '').toString()
       .replace(/&/g,'&amp;')
@@ -42,77 +33,42 @@
       .replace(/>/g,'&gt;');
   }
 
-  // CSVセル用エスケープ（書き出し）
   function csvEscape(s){
     const v = (s ?? '').toString();
     if (/[",\n]/.test(v)) return `"${v.replace(/"/g,'""')}"`;
     return v;
   }
 
-  // =========================
-  // メンバー（localStorage）
-  // =========================
   function getMembers(){
     return safeJsonParse(localStorage.getItem(MEMBERS_KEY) || '[]', []);
   }
-
   function setMembers(list){
     localStorage.setItem(MEMBERS_KEY, JSON.stringify(list));
   }
 
-  // =========================
-  // CSV パース（Excelの "" 対応）
-  // =========================
   function parseCSV(text){
     const s = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
     const rows = [];
-    let row = [];
-    let cur = '';
-    let inQuotes = false;
+    let row = [], cur = '', inQuotes = false;
 
     for (let i = 0; i < s.length; i++){
-      const ch = s[i];
-      const next = s[i+1];
-
+      const ch = s[i], next = s[i+1];
       if (ch === '"'){
-        if (inQuotes && next === '"'){ // "" -> "
-          cur += '"';
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
+        if (inQuotes && next === '"'){ cur += '"'; i++; }
+        else { inQuotes = !inQuotes; }
         continue;
       }
-
-      if (!inQuotes && ch === ','){
-        row.push(cur);
-        cur = '';
-        continue;
-      }
-
-      if (!inQuotes && ch === '\n'){
-        row.push(cur);
-        rows.push(row);
-        row = [];
-        cur = '';
-        continue;
-      }
-
+      if (!inQuotes && ch === ','){ row.push(cur); cur=''; continue; }
+      if (!inQuotes && ch === '\n'){ row.push(cur); rows.push(row); row=[]; cur=''; continue; }
       cur += ch;
     }
+    row.push(cur); rows.push(row);
 
-    row.push(cur);
-    rows.push(row);
-
-    // 空行除去 + trim
     return rows
       .map(r => r.map(c => (c ?? '').trim()))
       .filter(r => r.some(c => c !== ''));
   }
 
-  // A=氏名 B=かな C=生年 D=性別（C/D空欄OK）
-  // ヘッダ行（氏名/かな/生年/性別 など）があれば自動でスキップ
   function csvToMembers(csvText){
     const rows = parseCSV(csvText);
     if (!rows.length) throw new Error('CSVが空です');
@@ -128,28 +84,17 @@
 
     const members = [];
     for (const r of dataRows){
-      const name = (r[0] || '').trim();      // A
-      const kana = (r[1] || '').trim();      // B
-      const birthYear = (r[2] || '').trim(); // C（空欄OK）
-      const gender = (r[3] || '').trim();    // D（空欄OK）
-
+      const name = (r[0] || '').trim();
+      const kana = (r[1] || '').trim();
+      const birthYear = (r[2] || '').trim();
+      const gender = (r[3] || '').trim();
       if (!name) continue;
-
-      members.push({
-        name,
-        kana,
-        birthYear: birthYear || '',
-        gender: gender || ''
-      });
+      members.push({ name, kana, birthYear: birthYear || '', gender: gender || '' });
     }
-
     if (!members.length) throw new Error('有効な氏名が見つかりませんでした');
     return members;
   }
 
-  // =========================
-  // 表（/section）行テンプレ
-  // =========================
   function rowTemplate() {
     return `
       <div class="row-group" role="rowgroup" aria-label="データ行">
@@ -174,12 +119,10 @@
     `;
   }
 
-  // 行間スワップスロット（⇅）を再構成（最下段には作らない）
   function rebuildSwapSlots(){
     const rowsEl = $('#rows');
     if (!rowsEl) return;
     rowsEl.querySelectorAll('.swap-slot').forEach(el => el.remove());
-
     const rows = Array.from(rowsEl.querySelectorAll('.row-group'));
     for (let i = 0; i < rows.length - 1; i++){
       const slot = document.createElement('div');
@@ -189,20 +132,13 @@
     }
   }
 
-  // =========================
-  // /section 保存・復元
-  // =========================
-  // 区間/備考：{t,a} 形式（a=left/center/right）にも対応（後方互換）
   const ALIGN_FIELDS = new Set(['sectionTop','sectionBottom','notes']);
-
   function applyAlign(cell, align) {
     cell.dataset.align = align;
     cell.style.textAlign = align === 'left' ? 'left' : align === 'right' ? 'right' : 'center';
     cell.style.justifyContent = align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center';
   }
-  function getAlign(cell){
-    return cell.dataset.align || 'center';
-  }
+  function getAlign(cell){ return cell.dataset.align || 'center'; }
 
   function serializeRows() {
     const rowsEl = $('#rows');
@@ -226,22 +162,18 @@
   function restoreRows(dayKey) {
     const rowsEl = $('#rows');
     if (!rowsEl) return;
-
     rowsEl.innerHTML = '';
     const raw = localStorage.getItem(rowsKey(dayKey));
     if (!raw) { rebuildSwapSlots(); return; }
-
     const data = safeJsonParse(raw, []);
     if (!Array.isArray(data)) { rebuildSwapSlots(); return; }
 
     for (const rowObj of data) {
       rowsEl.insertAdjacentHTML('beforeend', rowTemplate());
       const group = rowsEl.lastElementChild;
-
       group.querySelectorAll('[data-field]').forEach(cell => {
         const field = cell.dataset.field;
         const v = rowObj[field];
-
         if (ALIGN_FIELDS.has(field)) {
           if (v && typeof v === 'object') {
             cell.textContent = (v.t || '').trim();
@@ -257,7 +189,6 @@
         }
       });
     }
-
     rebuildSwapSlots();
   }
 
@@ -267,12 +198,8 @@
     saveTimer = setTimeout(() => saveRows(dayKey), 250);
   }
 
-  // =========================
-  // メンバー画面（/members）
-  // =========================
   function renderMembers(){
     const members = getMembers();
-
     $('#view').innerHTML = `
       <section>
         <div class="section-header" style="margin:12px 0;">
@@ -319,7 +246,6 @@
       }
     });
 
-    // CSV書出（UTF-8 BOM付き：Excel向け）
     $('#btnMembersExport').addEventListener('click', ()=>{
       const list = getMembers();
       const bom = '\uFEFF';
@@ -338,19 +264,16 @@
       URL.revokeObjectURL(url);
     });
 
-    // 全削除
     $('#btnMembersClear').addEventListener('click', ()=>{
       if (!confirm('メンバーを全削除します。よろしいですか？')) return;
       setMembers([]);
       renderMembers();
     });
 
-    // 編集保存（デバウンス）※ once: true を外す
     let t = null;
     $('#view').addEventListener('input', (e)=>{
       const cell = e.target.closest('.members-table .mcell[data-idx]');
       if (!cell) return;
-
       const idx = Number(cell.dataset.idx);
       const key = cell.dataset.key;
       const val = (cell.textContent || '').trim();
@@ -364,9 +287,6 @@
     });
   }
 
-  // =========================
-  // /section 画面
-  // =========================
   function renderSection(rest) {
     const dayKey = (rest || DEFAULT_DAY).toLowerCase();
     const titleDefault = TITLE_BY_DAY[dayKey] || TITLE_BY_DAY[DEFAULT_DAY];
@@ -397,9 +317,8 @@
 
         <div id="rows" class="rows"></div>
       </section>
-    ”
+    `;
 
-    // タイトル復元＆編集
     const h = $('#sectionTitleHeading');
     const saved = localStorage.getItem(titleKey(dayKey));
     if (saved && saved.trim()) h.textContent = saved.trim();
@@ -414,45 +333,32 @@
     });
 
     restoreRows(dayKey);
-
-    // sticky帯の top を計算（既存の固定関数がある場合だけ）
-    if (typeof setStickyOffsets === 'function') setStickyOffsets?.();
   }
 
   function renderCover() {
     $('#view').innerHTML = '<section><h2>表紙</h2></section>';
   }
 
-  // =========================
-  // ルーティング
-  // =========================
   function initRouting() {
     if (typeof window.route !== 'function' || typeof window.navigate !== 'function') {
       $('#view').textContent = 'router.js の読み込みに失敗しました';
       return;
     }
-
-    window.route('/cover', () => renderCover());
-    window.route('/section', (rest) => renderSection(rest));
-    window.route('/members', () => renderMembers());
-    window.route('/404', () => { $('#view').textContent = '404'; });
+    window.route('/cover',    () => renderCover());
+    window.route('/section',  (rest) => renderSection(rest));
+    window.route('/members',  () => renderMembers());
+    window.route('/404',      () => { $('#view').textContent = '404'; });
 
     if (!location.hash) location.hash = '#/cover';
     window.navigate();
   }
 
-  // =========================
-  // イベント（/section 用）
-  // =========================
   let selectedCell = null;
-
   function initEvents() {
-    // click（追加/削除/スワップ/配置）
     $('#view').addEventListener('click', (e) => {
       const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
       const dayKey = getDayKeyFromHash();
 
-      // 配置：区間/備考セル選択
       const cell = t.closest('#rows .cell[contenteditable="true"]');
       if (cell && cell.dataset && ALIGN_FIELDS.has(cell.dataset.field)) {
         if (selectedCell) selectedCell.style.outline = '';
@@ -461,7 +367,6 @@
         selectedCell.style.outlineOffset = '-2px';
       }
 
-      // 削除
       const del = t.closest('.row-del');
       if (del) {
         e.preventDefault(); e.stopPropagation();
@@ -470,7 +375,6 @@
         return;
       }
 
-      // 行間スワップ
       const swapBtn = t.closest('.swap-slot .row-swap');
       if (swapBtn) {
         e.preventDefault(); e.stopPropagation();
@@ -492,7 +396,6 @@
         return;
       }
 
-      // 追加
       const add = t.closest('#btnAddInline');
       if (add) {
         const rowsEl = $('#rows');
@@ -504,7 +407,6 @@
         return;
       }
 
-      // 配置ボタン（左/中/右）
       const alignBtn = t.closest('#inlineAlign button[data-align]');
       if (alignBtn && selectedCell && dayKey) {
         applyAlign(selectedCell, alignBtn.dataset.align);
@@ -513,7 +415,6 @@
       }
     });
 
-    // input（/section 保存）
     $('#view').addEventListener('input', (e) => {
       if (!e.target.closest('#rows')) return;
       const dayKey = getDayKeyFromHash();
@@ -521,25 +422,4 @@
       scheduleSave(dayKey);
     });
 
-    // Tab 全選択（/section）
     $('#view').addEventListener('keydown', (e) => {
-      if (e.key !== 'Tab') return;
-      const cell = e.target.closest('#rows .cell[contenteditable="true"]');
-      if (!cell) return;
-
-      e.preventDefault();
-      const list = Array.from(document.querySelectorAll('#rows .cell[contenteditable="true"]'));
-      const i = list.indexOf(cell);
-      if (i === -1) return;
-
-      const j = !e.shiftKey ? Math.min(i + 1, list.length - 1) : Math.max(i - 1, 0);
-      const next = list[j];
-      if (!next) return;
-
-      next.focus();
-      setTimeout(() => {
-        const sel = window.getSelection();
-        const range = document.createRange();
-        range.selectNodeContents(next);
-        sel.removeAllRanges();
-        sel.addRange(range);
