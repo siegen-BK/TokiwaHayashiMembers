@@ -1,39 +1,35 @@
-// 超シンプルなハッシュルーター
-const routes = {};
+(() => {
+  // シンプルなハッシュルータ
+  const routes = {};
+  function route(path, handler){
+    routes[path] = handler;
+  }
 
-function route(path, handler) {
-  routes[path] = handler;
-}
+  function parseHash(){
+    const hash = location.hash || '#/cover'; // 例: "#/section/d1"
+    const m = hash.match(/^#(\/[^?]*)/);
+    const full = m ? m[1] : '/cover';       // "/section/d1"
+    const parts = full.split('/').filter(Boolean); // ["section","d1"]
+    const base = '/' + (parts[0] || 'cover');      // "/section"
+    const rest = parts.slice(1).join('/') || '';   // "d1"
+    return { base, rest };
+  }
 
-function navigate() {
-  const hash = location.hash || '#/cover';
-  const parts = hash.split('/');           // 例: "#/section/d1" → ["#", "section", "d1"]
-  const base  = parts[1] || 'cover';       // "section" / "cover" など
-  const rest  = parts[2];                  // "d1" / undefined
-  const key   = `/${base}`;
+  function navigate(){
+    const { base, rest } = parseHash();
+    const handler = routes[base] || routes['/404'];
+    handler && handler(rest);
 
-  // ハンドラが無ければ /cover にフォールバック（最終手段は 404 表示）
-  const handler =
-    routes[key] ||
-    routes['/cover'] ||
-    (() => {
-      const v = document.getElementById('view');
-      if (v) v.textContent = '404';
+    // タブのactive表示
+    document.querySelectorAll('.tabs .tab').forEach(a => {
+      const href = a.getAttribute('href') || '';
+      const active = href.startsWith('#' + base);
+      a.classList.toggle('active', active);
     });
+  }
 
-  handler(rest);
+  window.route = route;
+  window.navigate = navigate;
 
-  // タブの active 切替（完全一致、末尾スラッシュ無視）
-  const norm = (s) => (s || '').replace(/\/$/, '');
-  document.querySelectorAll('.tab').forEach((a) => {
-    const href = a.getAttribute('href') || '';
-    a.classList.toggle('active', norm(href) === norm(hash));
-  });
-}
-
-window.addEventListener('hashchange', navigate);
-
-// ★ app.js から呼べるように「公開」するのが重要
-window.route = route;
-window.navigate = navigate;
-window.routes = routes; // （任意）デバッグ用
+  window.addEventListener('hashchange', navigate);
+})();
