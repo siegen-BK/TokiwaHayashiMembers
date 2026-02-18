@@ -1,7 +1,4 @@
 (() => {
-  // =========================
-  // 設定・定数
-  // =========================
   const STORAGE_PREFIX = 'membersApp:';
   const DEFAULT_DAY = 'd1';
   const TITLE_BY_DAY = {
@@ -12,7 +9,6 @@
   const MEMBERS_KEY = `${STORAGE_PREFIX}members`;
   const ALIGN_FIELDS = new Set(['sectionTop','sectionBottom','notes']);
 
-  // ユーティリティ
   const $ = (sel, root = document) => root.querySelector(sel);
   const safeJsonParse = (t, f) => { try { return JSON.parse(t); } catch { return f; } };
   const titleKey = (k) => `${STORAGE_PREFIX}title:${k}`;
@@ -25,17 +21,13 @@
     return TITLE_BY_DAY[k] ? k : DEFAULT_DAY;
   }
 
-  // =========================
-  // レイアウト・計算
-  // =========================
+  // 表示のズレを直す計算
   function updateStickyLayout() {
     const header = $('.app-header');
     const toolbar = $('.section-toolbar');
     if (!header) return;
-
     const hHeight = header.offsetHeight;
     document.documentElement.style.setProperty('--sticky-top-toolbar', `${hHeight}px`);
-
     if (toolbar) {
       const tHeight = toolbar.offsetHeight;
       document.documentElement.style.setProperty('--toolbar-h', `${tHeight}px`);
@@ -43,9 +35,6 @@
     }
   }
 
-  // =========================
-  // データ操作（保存・復元）
-  // =========================
   function serializeRows() {
     const rowsEl = $('#rows');
     if (!rowsEl) return [];
@@ -78,9 +67,6 @@
     cell.style.justifyContent = align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center';
   }
 
-  // =========================
-  // HTMLテンプレート
-  // =========================
   function rowTemplate() {
     return `
       <div class="row-group" role="rowgroup">
@@ -113,9 +99,6 @@
     }
   }
 
-  // =========================
-  // 画面レンダリング
-  // =========================
   function renderSection(rest) {
     const dayKey = (rest || DEFAULT_DAY).toLowerCase();
     const titleDefault = TITLE_BY_DAY[dayKey] || TITLE_BY_DAY[DEFAULT_DAY];
@@ -172,77 +155,51 @@
     setTimeout(updateStickyLayout, 0);
   }
 
-  // =========================
-  // 初期化・イベント
-  // =========================
   let selectedCell = null;
-
   function initEvents() {
     window.addEventListener('resize', updateStickyLayout);
-
     $('#view').addEventListener('click', (e) => {
       const t = e.target;
       const dayKey = getDayKeyFromHash();
-
-      // 追加ボタン
       if (t.closest('#btnAddInline')) {
         $('#rows').insertAdjacentHTML('beforeend', rowTemplate());
-        rebuildSwapSlots();
-        saveRows(dayKey);
-        return;
+        rebuildSwapSlots(); saveRows(dayKey); return;
       }
-
-      // 削除ボタン
       const delBtn = t.closest('.row-del');
       if (delBtn) {
         delBtn.closest('.row-group').remove();
-        rebuildSwapSlots();
-        saveRows(dayKey);
-        return;
+        rebuildSwapSlots(); saveRows(dayKey); return;
       }
-
-      // 入替ボタン
       const swapBtn = t.closest('.row-swap');
       if (swapBtn) {
         const slot = swapBtn.closest('.swap-slot');
         const upper = slot.previousElementSibling;
         const lower = slot.nextElementSibling;
-        if (upper && lower) {
-          lower.after(upper);
-          rebuildSwapSlots();
-          saveRows(dayKey);
-        }
+        if (upper && lower) { lower.after(upper); rebuildSwapSlots(); saveRows(dayKey); }
         return;
       }
-
-      // セル選択
       const cell = t.closest('#rows .cell[contenteditable="true"]');
       if (cell) {
         if (selectedCell) selectedCell.style.outline = '';
         selectedCell = cell;
         selectedCell.style.outline = '2px solid #000';
       }
-
-      // 整列ボタン
       const alignBtn = t.closest('#inlineAlign button');
       if (alignBtn && selectedCell) {
         applyAlign(selectedCell, alignBtn.dataset.align);
         saveRows(dayKey);
       }
     });
-
     $('#view').addEventListener('input', (e) => {
       const dayKey = getDayKeyFromHash();
       if (dayKey) scheduleSave(dayKey);
     });
-    
-    document.getElementById('btnPrint')?.onclick = () => window.print();
+    document.getElementById('btnPrint')?.addEventListener('click', () => window.print());
   }
 
-  // ルーティング
   window.route('/cover', () => { $('#view').innerHTML = '<h2>表紙</h2>'; updateStickyLayout(); });
   window.route('/section', (rest) => renderSection(rest));
-  window.route('/members', () => { $('#view').innerHTML = '<h2>メンバー管理（準備中）</h2>'; updateStickyLayout(); });
+  window.route('/members', () => { $('#view').innerHTML = '<h2>メンバー管理</h2>'; updateStickyLayout(); });
 
   document.addEventListener('DOMContentLoaded', () => {
     initEvents();
