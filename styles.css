@@ -67,7 +67,7 @@ body{
 
 /* 本文コンテナ */
 main{
-  padding:16px;
+  padding:0;
   max-width:960px;
   margin:0 auto;
 }
