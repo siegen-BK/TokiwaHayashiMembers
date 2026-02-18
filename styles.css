@@ -1,42 +1,46 @@
-.app-header{
+.app-header {
   position: fixed;
   top: 0;
-  left: 0;           /* 画面左端固定 */
-  right: 0;          /* 画面右端固定 */
-  width: auto;       /* 幅指定解除 */
+  left: 0;
+  right: 0;
+  width: auto;
   z-index: 100;
-  background:#fff;
+  background: #fff;
   border-bottom: 1px solid #000;
   padding: 12px 16px;
+  /* 横幅いっぱいだが、内側のボタン群は中央寄せ or 左寄せで見た目確保 */
+  display: flex;
+  align-items: center;
+  /* ここで内側コンテンツの横幅制限 */
+  max-width: 960px;
+  margin: 0 auto;
 }
 
-.section-toolbar{
-  position: fixed;
-  top: 60px;
-  left: 0;           /* 画面左端固定 */
-  right: 0;          /* 画面右端固定 */
-  width: auto;       /* 幅指定解除 */
-  z-index: 90;
-  background:#fff;
-  border-bottom: none;     /* 二重線を作らない */
-  margin: 0;               /* 中央揃え解除 */
-  min-height:44px;
+/* タブグループはflexで横並び */
+.tabs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
 }
 
-.first-row-table{
-  border-top: 1px solid #000;
-  border-left: 1px solid #000;
-  border-right: 1px solid #000;
-  border-bottom: none;
-  margin:0;
-  column-gap:0;
-  row-gap:0;
+/* ボタン自体は元のまま */
+.tab {
+  padding: 6px 10px;
+  border: 1px solid #000;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #000;
+  background: #fff;
+}
 
-  position: fixed;
-  top: 104px;
-  left: 0;           /* 画面左端固定 */
-  right: 0;          /* 画面右端固定 */
-  width: auto;       /* 幅指定解除 */
-  z-index: 80;
-  background:#fff;
+.tab.active {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+.print {
+  margin-left: auto;
 }
