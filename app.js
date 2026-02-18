@@ -345,7 +345,7 @@
       renderMembers();
     });
 
-    // 編集保存（デバウンス）
+    // 編集保存（デバウンス）※ once: true を外す
     let t = null;
     $('#view').addEventListener('input', (e)=>{
       const cell = e.target.closest('.members-table .mcell[data-idx]');
@@ -361,7 +361,7 @@
 
       clearTimeout(t);
       t = setTimeout(()=> setMembers(list), 250);
-    }, { once: true }); // 二重登録防止（renderMembersごとに付け直す）
+    });
   }
 
   // =========================
@@ -397,7 +397,7 @@
 
         <div id="rows" class="rows"></div>
       </section>
-    `;
+    ”
 
     // タイトル復元＆編集
     const h = $('#sectionTitleHeading');
@@ -415,8 +415,8 @@
 
     restoreRows(dayKey);
 
-    // sticky帯の top を計算（あなたの固定レイアウト用）
-    if (typeof setStickyOffsets === 'function') setStickyOffsets?.(); // 既存の固定関数がある場合に備える
+    // sticky帯の top を計算（既存の固定関数がある場合だけ）
+    if (typeof setStickyOffsets === 'function') setStickyOffsets?.();
   }
 
   function renderCover() {
@@ -543,18 +543,3 @@
         range.selectNodeContents(next);
         sel.removeAllRanges();
         sel.addRange(range);
-      }, 0);
-    });
-
-    // 印刷
-    document.getElementById('btnPrint')?.addEventListener('click', () => window.print());
-  }
-
-  // =========================
-  // 起動
-  // =========================
-  document.addEventListener('DOMContentLoaded', () => {
-    initRouting();
-    initEvents();
-  });
-})();
