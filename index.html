@@ -1,28 +1,23 @@
-<!doctype html>
-<html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>メンバー表 1.46.6</title>
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>メンバー表 ver.1.44.0</title>
+<link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-  <header class="app-header">
-    <nav class="tabs" aria-label="ナビゲーション">
-      <a class="tab" href="#/cover">表紙</a>
-      <a class="tab" href="#/section/d1">11月3日</a>
-      <a class="tab" href="#/section/d2">11月4日</a>
-      <a class="tab" href="#/section/d3">11月5日</a>
-      <a class="tab" href="#/members">メンバー</a>
-    </nav>
-  </header>
+<header class="app-header">
+<nav class="tabs">
+<a class="tab" href="#/cover">表紙</a>
+<a class="tab" href="#/section/d1">11月3日</a>
+<a class="tab" href="#/section/d2">11月4日</a>
+<a class="tab" href="#/section/d3">11月5日</a>
+<button id="btnPrint" class="print">🖨 印刷</button>
+</nav>
+</header>
 
-  <main>
-    <div id="view"></div>
-  </main>
+<main id="view"><div class="note">読み込み中…</div></main>
 
-  <script src="router.js"></script>
-  <script src="app.js"></script>
+<script src="router.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
