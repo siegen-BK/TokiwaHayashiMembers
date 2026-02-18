@@ -1,46 +1,348 @@
-.app-header {
+:root{
+  /* ===== 黒/白のみ ===== */
+  --ink:#000;        /* 文字色 */
+  --grid:#000;       /* 罫線色 */
+  --bg:#fff;         /* 背景 */
+
+  /* ===== 列幅（ヘッダ/行で共通） ===== */
+  --col-section: 1.6fr;  /* 区間・場所 */
+  --col-part:    0.92fr; /* 大胴〜笛 */
+  --col-notes:   1.4fr;  /* 備考 */
+
+  /* ===== 行高 ===== */
+  --h-unit: 36px;                      /* 1段 */
+  --header-h: calc(var(--h-unit) / 2); /* 先頭行は半分 */
+
+  /* ===== 固定（sticky）用：JSが代入 ===== */
+  --sticky-top-toolbar:   0px;  /* タブ直下にツールバー */
+  --sticky-top-tablehead: 0px;  /* ツールバー直下に先頭行 */
+  --toolbar-h: 44px;            /* ツールバー実高（JSで上書き） */
+}
+
+*{ box-sizing:border-box; }
+
+body{
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+  margin:0;
+  color:var(--ink);
+  background:var(--bg);
+}
+
+/* =========================================================
+   固定帯 1: タブ（アプリヘッダ）最上段に固定
+   ========================================================= */
+.app-header{
   position: fixed;
   top: 0;
-  left: 0;
-  right: 0;
-  width: auto;
+  left:0;
+  right:0;
+  width: 100vw;       /* 画面全幅 */
   z-index: 100;
-  background: #fff;
+  background:#fff;
   border-bottom: 1px solid #000;
   padding: 12px 16px;
-  /* 横幅いっぱいだが、内側のボタン群は中央寄せ or 左寄せで見た目確保 */
   display: flex;
+  flex-direction: column; /* 縦積み */
   align-items: center;
-  /* ここで内側コンテンツの横幅制限 */
-  max-width: 960px;
+}
+
+.tabs{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-top:8px;
+  flex-wrap:wrap;
+}
+
+.tab{
+  padding:6px 10px;
+  border:1px solid #000;
+  border-radius:8px;
+  text-decoration:none;
+  color:#000;
+  background:#fff;
+}
+
+.tab.active{
+  background:#000;
+  color:#fff;
+  border-color:#000;
+}
+
+.print{ margin-left:auto; }
+
+/* 本文コンテナ */
+main{
+  padding:0;
+  max-width: calc(100% - 196px); /* 両側 98pxずつ余白 */
   margin: 0 auto;
 }
 
-/* タブグループはflexで横並び */
-.tabs {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-top: 8px;
-  flex-wrap: wrap;
+/* =========================================================
+   固定帯 2: タイトル＆書式＆追加（タブ直下に固定）
+   ========================================================= */
+.section-toolbar{
+  position: fixed;
+  top: 60px;
+  z-index: 90;
+  background:#fff;
+  border-bottom: none;     /* 二重線を作らない */
+  max-width: calc(100% - 196px); /* 両側 98px空けて中央寄せ */
+  margin: 0 auto;
+  min-height:44px;
+  text-align: center;      /* タイトル中央寄せ */
 }
 
-/* ボタン自体は元のまま */
-.tab {
-  padding: 6px 10px;
-  border: 1px solid #000;
-  border-radius: 8px;
-  text-decoration: none;
-  color: #000;
-  background: #fff;
+.toolbar-left{
+  position:absolute;
+  left:0; /* 左端寄せ */
+  top:50%;
+  transform:translateY(-50%);
+  display:flex;
+  gap:8px;
+  align-items:center;
 }
 
-.tab.active {
-  background: #000;
-  color: #fff;
-  border-color: #000;
+.align-inline button,
+.btn-add{
+  padding:6px 10px;
+  border:1px solid #000;
+  border-radius:8px;
+  background:#fff;
+  color:#000;
+  cursor:pointer;
 }
 
-.print {
-  margin-left: auto;
+.align-inline button:hover,
+.btn-add:hover{
+  background:#fff; /* 黒白のみ（変化させない） */
+}
+
+.sheet-title{
+  margin:8px 0;
+  font-size:28px;
+  font-weight:700;
+  color:#000;
+}
+
+/* =========================================================
+   表（Excel風：外枠＋格子）
+   ========================================================= */
+.first-row-table,
+.row-group{
+  display:grid;
+  grid-template-columns:
+    var(--col-section)
+    var(--col-part) var(--col-part) var(--col-part)
+    var(--col-part) var(--col-part)
+    var(--col-notes);
+}
+
+/* 固定帯 3: 先頭行（表ヘッダ） */
+.first-row-table{
+  border-top: 1px solid #000;
+  border-left: 1px solid #000;
+  border-right: 1px solid #000;
+  border-bottom: none;
+  margin:0;
+  column-gap:0;
+  row-gap:0;
+
+  position: fixed;
+  top: 104px;
+  z-index: 80;
+  background:#fff;
+
+  max-width: calc(100% - 196px); /* 両側98px空けて中央寄せ */
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.first-row-table .cell{
+  border-bottom: 1px solid #000;
+  padding: 0 12px;
+  min-height: var(--header-h);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-size:15px;
+  color:#000;
+  background:#fff;
+  white-space:nowrap;
+}
+
+.first-row-table .cell:not(:last-child){
+  border-right: 1px solid #000;
+}
+
+/* =========================================================
+   データ行
+   ========================================================= */
+.rows{
+  position:relative;
+  z-index:1;
+  border-left: 1px solid #000;
+  border-right: 1px solid #000;
+  margin-top:0;
+
+  max-width: calc(100% - 196px); /* 両側98px空けて中央寄せ */
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.row-group{
+  grid-template-rows: 1fr 1fr;
+  border-bottom: 1px solid #000;
+  position:relative;
+  column-gap:0;
+  row-gap:0;
+}
+
+.row-group .cell{
+  border-right: 1px solid #000;
+  padding: 10px 12px;
+  font-size: 15px;
+  color:#000;
+  background:#fff;
+
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:center;
+
+  min-height: var(--h-unit);
+}
+
+.row-group .cell:last-of-type{
+  border-right: none;
+}
+
+.row-group .span2{
+  grid-row: 1 / span 2;
+  min-height: calc(var(--h-unit) * 2);
+}
+
+.cell.split-top{
+  border-top: 1px solid #000;
+}
+
+/* 右外側ボタン */
+.row-tools,
+.row-del{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  width:34px;
+  height:34px;
+  border:1px solid #000;
+  border-radius:8px;
+  background:#fff;
+  color:#000;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+  font-size:16px;
+  line-height:1;
+  z-index:5; /* 固定帯(z=80/90/100)に隠れる */
+}
+.row-tools{ right:-44px; }
+.row-del  { right:-84px; }
+
+/* 行間境界スワップ */
+.swap-slot{
+  position:relative;
+  height:0;
+}
+.swap-slot .row-swap{
+  position:absolute;
+  left:-44px;
+  top:-17px; /* 34px/2 */
+  width:34px;
+  height:34px;
+  border:1px solid #000;
+  border-radius:8px;
+  background:#fff;
+  color:#000;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+  font-size:16px;
+  line-height:1;
+  z-index:5; /* 固定帯に隠れる */
+}
+
+/* 白マスク */
+body::before{
+  content:'';
+  position:fixed;
+  top: var(--sticky-top-toolbar);
+  left:0;
+  right:0;
+  height: var(--toolbar-h);
+  background:#fff;
+  z-index:89;
+  pointer-events:none;
+}
+
+body::after{
+  content:'';
+  position:fixed;
+  top: var(--sticky-top-tablehead);
+  left:0;
+  right:0;
+  height: calc(var(--header-h) + 2px);
+  background:#fff;
+  z-index:79;
+  pointer-events:none;
+}
+
+/* モバイル調整 */
+@media (max-width: 520px){
+  .row-tools{ right:6px; }
+  .row-del  { right:46px; }
+  .swap-slot .row-swap{ left:6px; }
+}
+
+/* メンバー表 */
+.members-table{
+  display:grid;
+  grid-template-columns: 2.2fr 2.2fr 1fr 1fr;
+  border:1px solid #000;
+  background:#fff;
+}
+.members-table .mcell{
+  border-right:1px solid #000;
+  border-bottom:1px solid #000;
+  padding:8px 10px;
+  min-height:34px;
+  display:flex;
+  align-items:center;
+  color:#000;
+  background:#fff;
+}
+.members-table .mcell:nth-child(4n){
+  border-right:none;
+}
+.members-table .mcell.head{
+  font-weight:700;
+  justify-content:center;
+}
+
+/* 印刷 */
+@media print{
+  .app-header,
+  .section-toolbar,
+  .first-row-table{
+    position: static;
+  }
+  body::before,
+  body::after{
+    display:none;
+  }
+  main{
+    max-width:none;
+    margin:0;
+    padding:0 18mm;
+  }
 }
