@@ -26,8 +26,6 @@ body{
   margin:0;
   color:var(--ink);
   background:var(--bg);
-  width:100%;
-  overflow-x:hidden; /* 横スクロール防止 */
 }
 
 /* =========================================================
@@ -36,9 +34,6 @@ body{
 .app-header{
   position: fixed;
   top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
   z-index: 100;
   background:#fff;
   border-bottom: 1px solid #000;
@@ -74,7 +69,6 @@ body{
 main{
   padding:0;
   margin:0;
-  max-width:none;
 }
 
 /* =========================================================
@@ -84,10 +78,7 @@ main{
    ========================================================= */
 .section-toolbar{
   position: fixed;
-  top: var(--sticky-top-toolbar);
-  left: 0;
-  right: 0;
-  width: 100%;
+  top: 60px;
   z-index: 90;
   background:#fff;
   border-bottom: none;     /* 二重線を作らない */
@@ -144,7 +135,6 @@ main{
 
 /* =========================================================
    固定帯 3: 先頭行（表ヘッダ）ツールバー直下に固定
-   - 上枠線は純黒1px
    ========================================================= */
 .first-row-table{
   border-top: 1px solid #000;
@@ -156,12 +146,14 @@ main{
   row-gap:0;
 
   position: fixed;
-  top: var(--sticky-top-tablehead);
-  left: 0;
-  right: 0;
-  width: 100%;
+  top: 104px;
   z-index: 80;
   background:#fff;
+
+  /* 中央揃え＋左右余白98px確保 */
+  max-width: calc(100% - 196px);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* 先頭行セル */
@@ -193,6 +185,11 @@ main{
   border-left: 1px solid #000;
   border-right: 1px solid #000;
   margin-top:0;
+
+  /* 中央揃え＋左右余白98px確保 */
+  max-width: calc(100% - 196px);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .row-group{
@@ -236,7 +233,6 @@ main{
 
 /* =========================================================
    右外側：ツール／削除（行の垂直中央）
-   - 固定帯より下層（z-index低め）
    ========================================================= */
 .row-tools,
 .row-del{
@@ -254,7 +250,7 @@ main{
   place-items:center;
   font-size:16px;
   line-height:1;
-  z-index:5; /* 固定帯(z=80/90/100)に確実に隠れる */
+  z-index:5;
 }
 .row-tools{ right:-44px; }
 .row-del  { right:-84px; }
@@ -269,7 +265,7 @@ main{
 .swap-slot .row-swap{
   position:absolute;
   left:-44px;
-  top:-17px; /* 34px/2 */
+  top:-17px;
   width:34px;
   height:34px;
   border:1px solid #000;
@@ -281,11 +277,11 @@ main{
   place-items:center;
   font-size:16px;
   line-height:1;
-  z-index:5; /* 固定帯に隠れる */
+  z-index:5;
 }
 
 /* =========================================================
-   ★重要：固定帯の“左右ガター含む”白マスク
+   ★固定帯の白マスク
    ========================================================= */
 body::before{
   content:'';
