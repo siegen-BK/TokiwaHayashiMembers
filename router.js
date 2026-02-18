@@ -1,3 +1,4 @@
+// router.js（全文）
 (() => {
   const routes = {};
 
@@ -35,4 +36,3 @@
   // 初期遷移（ハッシュ未設定時は d1 へ）
   if (!location.hash) location.hash = '#/section/d1';
 })();
-``
