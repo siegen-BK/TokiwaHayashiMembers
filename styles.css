@@ -1,23 +1,23 @@
 :root {
   /* ===== 黒/白のみ ===== */
-  --ink: #000;
-  --grid: #000;
-  --bg: #fff;
+  --ink: #000;         /* 文字色 */
+  --grid: #000;        /* 罫線色 */
+  --bg: #fff;          /* 背景 */
 
-  /* ===== 列幅 ===== */
-  --col-section: 1.6fr;
-  --col-part: 0.92fr;
-  --col-notes: 1.4fr;
+  /* ===== 列幅（ヘッダ/行で共通） ===== */
+  --col-section: 1.6fr;  /* 区間・場所 */
+  --col-part:    0.92fr; /* 大胴〜笛 */
+  --col-notes:   1.4fr;  /* 備考 */
 
   /* ===== 行高 ===== */
-  --h-unit: 36px;
-  --header-h: 18px; /* 実効値36pxの半分として定義 */
+  --h-unit: 36px;                       /* 1段 */
+  --header-h: calc(var(--h-unit) / 2); /* 先頭行は半分(18px) */
 
-  /* ===== 固定（fixed）連動用変数 ===== */
-  --app-header-h: 80px;         /* アプリヘッダーの実高 */
-  --toolbar-h: 44px;            /* ツールバーの実高 */
-  --sticky-top-toolbar: 80px;   /* ツールバーの固定位置(top) */
-  --sticky-top-tablehead: 124px; /* 見出し行の固定位置(top) */
+  /* ===== 固定（fixed）用：JSが代入 ===== */
+  --app-header-h: 80px;         /* アプリヘッダー実高 */
+  --toolbar-h: 44px;            /* ツールバー実高 */
+  --sticky-top-toolbar: 80px;   /* タブ直下にツールバー */
+  --sticky-top-tablehead: 124px; /* ツールバー直下に先頭行 */
 }
 
 * { box-sizing: border-box; }
@@ -30,10 +30,10 @@ body {
 }
 
 /* =========================================================
-   固定帯 1: アプリヘッダー（最上段固定）
+   固定帯 1: タブ（アプリヘッダ）最上段に固定
    ========================================================= */
 .app-header {
-  position: fixed; /* 最初から固定 */
+  position: fixed; /* stickyから変更 */
   top: 0;
   left: 0;
   right: 0;
@@ -43,11 +43,36 @@ body {
   padding: 12px 16px;
 }
 
+.tabs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 6px 10px;
+  border: 1px solid #000;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #000;
+  background: #fff;
+}
+
+.tab.active {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+.print { margin-left: auto; }
+
 /* =========================================================
-   本文コンテナ（固定要素の裏に隠れないよう余白を確保）
+   本文コンテナ：3つの固定帯が浮いた分の余白を確保
    ========================================================= */
 main {
-  /* 余白 ＝ アプリヘッダ ＋ ツールバー ＋ 見出し行(H*2+2px) */
+  /* 余白 = アプリヘッダ + ツールバー + 先頭行(H*2) + 上下枠線(2px) */
   padding-top: calc(var(--app-header-h) + var(--toolbar-h) + (var(--header-h) * 2) + 2px);
   padding-left: 16px;
   padding-right: 16px;
@@ -56,69 +81,16 @@ main {
 }
 
 /* =========================================================
-   固定帯 2: セクションツールバー（アプリヘッダー直下固定）
+   固定帯 2: セクションツールバー（タブ直下に固定）
    ========================================================= */
 .section-toolbar {
-  position: fixed; /* 最初から固定 */
+  position: fixed; /* stickyから変更 */
   top: var(--sticky-top-toolbar);
   left: 0;
   right: 0;
   z-index: 90;
   background: #fff;
   width: 100%;
-  max-width: 960px; /* mainと合わせる */
+  max-width: 960px;
   margin: 0 auto;
-  min-height: 44px;
-}
-
-/* =========================================================
-   固定帯 3: 先頭行（見出し行）（ツールバー直下固定）
-   ========================================================= */
-.first-row-table {
-  position: fixed; /* 最初から固定 */
-  top: var(--sticky-top-tablehead);
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px); /* mainのpadding 16px*2 を考慮 */
-  max-width: 928px;
-  z-index: 80;
-  background: #fff;
-
-  border-top: 1px solid #000;
-  border-left: 1px solid #000;
-  border-right: 1px solid #000;
-  border-bottom: none;
-}
-
-/* --- セル等の定義は変更なしのため省略 --- */
-
-/* =========================================================
-   白マスク（ボタン隠し用）：H + 2px で正確に追従
-   ========================================================= */
-
-/* ツールバー部分のマスク */
-body::before {
-  content: '';
-  position: fixed;
-  top: var(--sticky-top-toolbar);
-  left: 0;
-  right: 0;
-  height: var(--toolbar-h);
-  background: #fff;
-  z-index: 89;
-  pointer-events: none;
-}
-
-/* 先頭行部分のマスク（H*2 + 2px で上下枠線までカバー） */
-body::after {
-  content: '';
-  position: fixed;
-  top: var(--sticky-top-tablehead);
-  left: 0;
-  right: 0;
-  /* ズームしても枠線1px*2が変わらないことを利用した計算 */
-  height: calc((var(--header-h) * 2) + 2px); 
-  background: #fff;
-  z-index: 79;
-  pointer-events: none;
-}
+  min-height:
