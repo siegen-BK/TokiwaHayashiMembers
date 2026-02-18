@@ -301,7 +301,7 @@ body::after{
   top: var(--sticky-top-tablehead);
   left:0;
   right:0;
-  height: calc(var(--header-h) + 3px);
+  height: calc(var(--header-h) + 2px);
   background:#fff;
   z-index:79;            /* 先頭行(80)の直下。ボタン(5)より上 */
   pointer-events:none;
