@@ -26,14 +26,19 @@ body{
   margin:0;
   color:var(--ink);
   background:var(--bg);
+  width:100%;
+  overflow-x:hidden; /* 横スクロール防止 */
 }
 
 /* =========================================================
    固定帯 1: タブ（アプリヘッダ）最上段に固定
    ========================================================= */
 .app-header{
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
   z-index: 100;
   background:#fff;
   border-bottom: 1px solid #000;
@@ -68,8 +73,8 @@ body{
 /* 本文コンテナ */
 main{
   padding:0;
-  max-width:960px;
-  margin:0 auto;
+  margin:0;
+  max-width:none;
 }
 
 /* =========================================================
@@ -78,13 +83,14 @@ main{
    - 中央にタイトル
    ========================================================= */
 .section-toolbar{
-  position: sticky;
+  position: fixed;
   top: var(--sticky-top-toolbar);
+  left: 0;
+  right: 0;
+  width: 100%;
   z-index: 90;
   background:#fff;
   border-bottom: none;     /* 二重線を作らない */
-  max-width:960px;
-  margin:0 auto;
   min-height:44px;
 }
 
@@ -149,8 +155,11 @@ main{
   column-gap:0;
   row-gap:0;
 
-  position: sticky;
+  position: fixed;
   top: var(--sticky-top-tablehead);
+  left: 0;
+  right: 0;
+  width: 100%;
   z-index: 80;
   background:#fff;
 }
@@ -277,11 +286,7 @@ main{
 
 /* =========================================================
    ★重要：固定帯の“左右ガター含む”白マスク
-   - ボタンが先頭行より上に出ない（固定帯の裏に入って消える）
-   - 基準は「先頭行の下罫線」＝マスクは下線直上まで
    ========================================================= */
-
-/* ツールバー帯の白マスク（画面全幅） */
 body::before{
   content:'';
   position:fixed;
@@ -290,11 +295,10 @@ body::before{
   right:0;
   height: var(--toolbar-h);
   background:#fff;
-  z-index:89;            /* ツールバー(90)の直下・先頭行(80)より上 */
+  z-index:89;
   pointer-events:none;
 }
 
-/* 先頭行帯の白マスク（下罫線直上まで＝header-h - 1px） */
 body::after{
   content:'';
   position:fixed;
@@ -303,7 +307,7 @@ body::after{
   right:0;
   height: calc(var(--header-h) + 2px);
   background:#fff;
-  z-index:79;            /* 先頭行(80)の直下。ボタン(5)より上 */
+  z-index:79;
   pointer-events:none;
 }
 
