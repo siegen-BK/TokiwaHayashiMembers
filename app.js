@@ -446,9 +446,10 @@ for (const rowObj of data) {
     if (eventsBound) return;
     eventsBound = true;
 
-    // click（追加/削除/スワップ/配置）
     $('#view').addEventListener('click', (e) => {
-const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
+  // 追加：現在の画面がどの日程(d1, d2, d3)かを取得する
+  const dayKey = getDayKeyFromHash(); 
+  const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
 
       // 配置：区間/備考セル選択
       const cell = t.closest('#rows .cell[contenteditable="true"]');
