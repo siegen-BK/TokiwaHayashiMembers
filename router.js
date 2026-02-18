@@ -1,4 +1,3 @@
-// router.js（全文）
 (() => {
   const routes = {};
 
@@ -20,7 +19,7 @@
   function navigate() {
     const { hash, base, rest } = parseHash();
     const handler = routes[base] || routes['/404'];
-    handler && handler(rest);
+    if (handler) handler(rest);
 
     // タブの active（ハッシュ完全一致）
     document.querySelectorAll('.tabs a.tab').forEach(a => {
@@ -33,6 +32,7 @@
 
   window.addEventListener('hashchange', navigate);
 
-  // 初期遷移
+  // 初期遷移（ハッシュ未設定時は d1 へ）
   if (!location.hash) location.hash = '#/section/d1';
 })();
+``
