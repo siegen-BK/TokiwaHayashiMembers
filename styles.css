@@ -1,113 +1,71 @@
-:root {
-  --ink: #000;
-  --bg: #fff;
+:root{
+  --ink:#000;
+  --grid:#000;
+  --bg:#fff;
   --col-section: 1.6fr;
-  --col-part: 0.92fr;
-  --col-notes: 1.4fr;
+  --col-part:    0.92fr;
+  --col-notes:   1.4fr;
   --h-unit: 36px;
   --header-h: calc(var(--h-unit) / 2);
-  --sticky-top-toolbar: 0px;
+  --sticky-top-toolbar:   0px;
   --sticky-top-tablehead: 0px;
   --toolbar-h: 44px;
 }
 
-body {
-  font-family: sans-serif;
-  margin: 0;
-  background: var(--bg);
-}
+*{ box-sizing:border-box; }
+body{ font-family: sans-serif; margin:0; color:var(--ink); background:var(--bg); }
 
 /* 固定ヘッダー */
-.app-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: #eee;
-  border-bottom: 1px solid #000;
+.app-header{
+  position: sticky; top:0; z-index:100;
+  background:#fff; border-bottom:1px solid #000;
 }
-
-.tabs { display: flex; align-items: center; padding: 4px; gap: 8px; }
-.tab { text-decoration: none; color: #000; padding: 6px 12px; border: 1px solid #ccc; }
-.tab.active { background: #000; color: #fff; }
+.tabs{ display:flex; gap:2px; padding:2px; }
+.tab{ 
+  text-decoration:none; color:#000; border:1px solid #000; 
+  padding:4px 8px; font-size:13px; font-weight:bold;
+}
+.tab.active{ background:#000; color:#fff; }
 
 /* ツールバー */
-.section-toolbar {
-  position: sticky;
-  top: var(--sticky-top-toolbar);
-  z-index: 95;
-  background: #fff;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 8px;
-  border-bottom: 1px solid #000;
+.section-toolbar{
+  position: sticky; top: var(--sticky-top-toolbar); z-index:90;
+  background:#fff; border-bottom:1px solid #000;
+  display:flex; justify-content:space-between; align-items:center; height:var(--toolbar-h);
 }
 
-/* 表のヘッダー */
-.first-row-table {
-  position: sticky;
-  top: var(--sticky-top-tablehead);
-  z-index: 90;
-  display: grid;
-  grid-template-columns: var(--col-section) repeat(5, var(--col-part)) var(--col-notes);
-  background: #000;
-  color: #fff;
-  text-align: center;
-  font-size: 12px;
+/* 先頭行 */
+.first-row-table{
+  position: sticky; top: var(--sticky-top-tablehead); z-index:80;
+  display:grid; grid-template-columns: var(--col-section) repeat(5, var(--col-part)) var(--col-notes);
+  background:#000; color:#fff; font-size:11px; text-align:center;
 }
 
-/* 行グループ */
-.row-group {
-  display: grid;
-  grid-template-columns: var(--col-section) repeat(5, var(--col-part)) var(--col-notes);
-  border-bottom: 1px solid #000;
-  position: relative;
+/* 行データ */
+.rows{ display:flex; flex-direction:column; }
+.row-group{
+  display:grid; grid-template-columns: var(--col-section) repeat(5, var(--col-part)) var(--col-notes);
+  border-bottom:1px solid #000; position:relative;
+}
+.cell{
+  border-right:1px solid #000; min-height:var(--h-unit);
+  display:flex; align-items:center; justify-content:center; padding:2px;
+}
+.cell.span2{ min-height: calc(var(--h-unit) * 2); }
+
+/* ボタン類（操作を邪魔しない設定） */
+.row-tools, .row-del{ 
+  position:absolute; right:2px; z-index:5; 
+  cursor:pointer; background:#fff; border:1px solid #000; font-size:10px;
+}
+.row-del{ top:20px; }
+.swap-slot{ height:4px; position:relative; }
+.row-swap{ 
+  position:absolute; left:2px; top:-8px; z-index:10;
+  cursor:pointer; background:#fff; border:1px solid #000; font-size:10px;
 }
 
-.cell {
-  border-right: 1px solid #000;
-  min-height: 20px;
-  padding: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  word-break: break-all;
-}
-
-/* ボタン類 */
-.row-del, .row-tools {
-  position: absolute;
-  right: 0;
-  z-index: 10;
-  cursor: pointer;
-}
-.row-del { top: 20px; }
-
-.swap-slot {
-  height: 10px;
-  position: relative;
-  background: #f9f9f9;
-}
-.row-swap {
-  position: absolute;
-  left: 0;
-  top: -10px;
-  z-index: 15;
-}
-
-/* 白マスクの干渉防止 */
-body::after {
-  content: '';
-  position: fixed;
-  top: var(--sticky-top-tablehead);
-  left: 0;
-  right: 0;
-  height: var(--header-h);
-  background: #fff;
-  z-index: 85;
-  pointer-events: none; /* ←これが無いとボタンが押せません */
-}
-
+/* 印刷時はボタンを隠す */
 @media print {
-  .app-header, .section-toolbar, .row-del, .row-swap, .row-tools, .swap-slot { display: none !important; }
+  .app-header, .section-toolbar, .row-tools, .row-del, .row-swap, .swap-slot { display:none !important; }
 }
