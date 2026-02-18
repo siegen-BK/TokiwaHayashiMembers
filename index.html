@@ -3,21 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>メンバー表1.0.46-a</title>
-  ./styles.css
+  <title>メンバー表 1.0.46-b</title>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 
 <body>
   <!-- タブ（固定する/しないは styles.css の .app-header で制御） -->
   <header class="app-header">
     <nav class="tabs" aria-label="ナビゲーション">
-      #/cover表紙</a>
-      #/section/d111月3日</a>
-      #/section/d211月4日</a>
-      #/section/d311月5日</a>
+      <a class="tab" href="#/cover">表紙</a>
+      <a class="tab" href="#/section/d1">11月3日</a>
+      <a class="tab" href="#/section/d2">11月4日</a>
+      <a class="tab" href="#/section/d3">11月5日</a>
 
-      <!-- ✅ メンバータブ：ここは #/members が正解 -->
-      #/membersメンバー</a>
+      <!-- メンバー管理 -->
+      <a class="tab" href="#/members">メンバー</a>
 
       <!-- 印刷ボタン（右寄せ） -->
       <button id="btnPrint" class="tab print" type="button">印刷</button>
@@ -30,7 +30,7 @@
   </main>
 
   <!-- ✅ 必ず router.js → app.js の順 -->
-  ./router.js</script>
-  ./app.js</script>
+  <script src="./router.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
