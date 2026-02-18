@@ -445,9 +445,7 @@
 
     // click（追加/削除/スワップ/配置）
     $('#view').addEventListener('click', (e) => {
-      const t = e.target;
-      const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
-
+const t = (e.target && e.target.nodeType === 3) ? e.target.parentElement : e.target;
 
       // 配置：区間/備考セル選択
       const cell = t.closest('#rows .cell[contenteditable="true"]');
