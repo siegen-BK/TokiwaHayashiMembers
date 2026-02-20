@@ -5,12 +5,12 @@
 
 @font-face{
   font-family:"MSGothic";
-  src:url("fonts/msgothic.ttc") format("truetype-collection");
+  src:url("fonts/msgothic.ttc") format("truetype-collection");/*MSゴシック*/
   font-weight:normal;
   font-style:normal;
 }
 
 body{
   margin:0;
-  font-family:"MSGothic",sans-serif;
+  font-family:"MSGothic",sans-serif;/*MSゴシックを指定*/
 }
