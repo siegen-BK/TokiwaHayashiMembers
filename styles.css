@@ -15,6 +15,7 @@
 
   /* === 行高 === */
   --h-unit: 36px;                       /* データ行の最小高（1段） */
+  --sheet-offset: 98px;
   --header-h: calc(var(--h-unit) / 2);  /* 先頭行（ヘッダー）高さ */
 
   /* === 固定帯 === */
@@ -190,7 +191,7 @@ button:active,
   transform: translateX(-50%);
 
   /* .sheet の左右端に合わせる＝見た目一塊（幅は .sheet と同じ） */
-  width: calc(100vw - (var(--edge) * 2));
+  width: calc(100vw - (var(--sheet-offset));
 
   top: calc(60px + var(--toolbar-h)); /* ツールバーの直下 */
   z-index: 90;
@@ -237,7 +238,7 @@ button:active,
   padding-top: calc(var(--header-h) + 1px);
 
   /* 幅は先頭行と一致させ、左右の外枠線も連続させる */
-  width: calc(100vw - (var(--edge) * 2));
+  width: calc(100vw - (var(--sheet-offset));
   margin: 0 auto;
 
   /* データ領域の左右外枠（先頭行の左右外枠と繋がる） */
@@ -304,8 +305,8 @@ button:active,
 }
 
 /* 表の「外側」に10pxの“間隔”を置いた上で配置 */
-.row-tools{ right: calc(-1 * (var(--gap) + 34px + 0px)); } /* 右外側に10px分空けつつ */
-.row-del  { left:  calc(-1 * (var(--gap) + 34px + 0px)); } /* 左外側に10px分空けつつ */
+.row-del{ right: calc(-1 * (var(--gap) + 34px)); } /* 右外側に10px分空けつつ */
+.row-del  { left:  calc(-1 * (var(--gap) + 34px)); } /* 左外側に10px分空けつつ */
 
 /* ボタン配色（白黒固定） */
 .row-tools:hover,
