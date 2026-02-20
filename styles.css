@@ -1,44 +1,5 @@
-:root{
-  /* === 色（白黒のみ　） === */
-  --ink:#000;
-  --grid:#000;
-  --bg:#fff;
-
-  /* === 余白・間隔（10px統一） === */
-  --gap: 10px;   /* ボタン間、要素間、内側パディングの基本値 */
-  --edge: 10px;  /* 画面端の左右マージン（必要な場面で使用） */
-
-  /* === 表の横幅オフセット（全幅から引く固定値）=== */
-  --sheet-offset: 98px;  /* ★ 表幅 = 全幅 - 98px */
-
-  /* === 表カラム幅 === */
-  --col-section: 1.6fr;  /* 区間 */
-  --col-part:    0.92fr; /* 役割（大胴～笛） */
-  --col-notes:   1.4fr;  /* 備考 */
-
-  /* === 行高 === */
-  --h-unit: 36px;                       /* データ行の最小高（1段） */
-  --header-h: calc(var(--h-unit) / 2);  /* 先頭行（ヘッダー）高さ */
-
-  /* === 固定帯 === */
-  --toolbar-h: 44px;  /* ツールバーの高さ */
-
-  /* === 角丸（必要なら後で0にも可） === */
-  --radius: 8px;
-}
-
-*{ box-sizing:border-box; }
-html,body{ height:100%; }
-
-body{
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
-  margin:0;
-  color:var(--ink);
-  background:var(--bg);
-}
-
 /* =========================================================
-   固定帯 1: アプリ最上段ヘッダー
+   固定帯 1: アプリ最上段ヘッダー（タイトル帯）
    ========================================================= */
 .app-header{
   position: fixed;
@@ -46,43 +7,87 @@ body{
   width: 100vw;
   z-index: 100;
   background:#fff;
-  border-bottom: 1px solid var(--grid);
-  padding: var(--gap) calc(var(--gap) + 6px);
+  border-bottom: 1px solid #000;
+  /* 上下左右の余白は10px基準。ヘッダー帯の見た目はここで完結 */
+  padding: 10px 16px; /* 16pxは視認性確保用。完全10pxにしたい場合は 10px に変更可 */
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--gap);
+  gap: 10px;
 }
 
 /* =========================================================
    固定帯 2: セクションツールバー（タブ/操作ボタン帯）
+   ─ タイトル中央、左右にボタン群。常に帯の中段に揃う
    ========================================================= */
 .section-toolbar{
   position: fixed;
-  top: 60px; /* .app-header の直下（タイトル帯の想定高さ） */
+  top: 60px;              /* .app-header の下。必要ならここも変数化可 */
   left: 0; right: 0;
   z-index: 95;
-  width: 100%;
-  height: var(--toolbar-h);
+  height: var(--toolbar-h);  /* ← 高さを明示：44px */
   background:#fff;
-  border-bottom: 1px solid var(--grid);
-  display: flex;
-  align-items: center;         /* 垂直中央揃え（帯高に対して） */
-  justify-content: center;     /* タイトル中央 */
-  padding: 0 calc(var(--edge) + 88px); /* 左右にボタン分の空き＋画面端10px */
+  border-bottom: 1px solid #000;
+
+  /* タイトル中央：フレックス中央寄せにしつつ左右スペースを確保 */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* 左群 / タイトル / 右群 */
+  align-items: center;                  /* 垂直中央揃え */
+  /* 画面端10pxのポリシーを守る */
+  padding: 0 10px;
 }
 
-/* ツールバー左側ボタン群（通常フレックスで左詰め） */
-.toolbar-left{
-  position: absolute;
-  left: var(--edge);
-  top: 50%;
-  transform: translateY(-50%);
-  display:flex;
-  gap: var(--gap);
-  align-items:center;
-}
-
-/* タイトル（中央固定） */
+/* タイトルは常に視覚的に中央（左右群の幅に影響されない） */
 .sheet-title{
-  font-size:28px;
+  grid-column: 2 / 3;       /* 真ん中カラムに固定 */
+  justify-self: center;
+  font-size: 28px;
+  font-weight: 700;
+  color:#000;
+  margin:0;
+  white-space: nowrap;
+  text-align:center;
+}
+
+/* 左右のボタン群コンテナ */
+.toolbar-left,
+.toolbar-right{
+  display:flex;
+  align-items:center;       /* 帯の中段にボタンが来る */
+  gap: 10px;                /* ボタン間隔は10px統一 */
+  min-width: 0;             /* はみ出し耐性 */
+}
+
+/* 左群は左端寄せ、右群は右端寄せ */
+.toolbar-left { grid-column: 1 / 2; justify-self: start; }
+.toolbar-right{ grid-column: 3 / 4; justify-self: end;  }
+
+/* =========================================================
+   ツールバーのボタン（白黒／1px枠／角丸8／間隔10／押しやすい）
+   ========================================================= */
+.toolbar-btn,
+button.toolbar-btn{
+  -webkit-appearance:none;
+  appearance:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap: 6px;                 /* アイコンとテキストの間は少し狭め */
+  padding: 8px 10px;        /* 間隔10pxポリシーに従う */
+  min-height: 36px;         /* 必要なら 40～44px に */
+  line-height: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color:#000;
+  background:#fff;
+  border:1px solid #000;
+  border-radius: 8px;
+  cursor:pointer;
+  user-select:none;
+  text-decoration:none;
+}
+
+.toolbar-btn:hover{ background:#fff; color:#000; border-color:#000; }
+.toolbar-btn:focus-visible{ outline: 2px dotted #000; outline-offset: 2px; }
+.toolbar-btn:active{ transform: translateY(1px); }
+``
