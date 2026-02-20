@@ -1,286 +1,109 @@
-:root{
-  /* 色（白黒のみ） */
-  --ink:#000;
-  --grid:#000;
-  --bg:#fff;
+(function(){
+  const table = document.getElementById('assignTable');
+  const tbody = document.getElementById('tbody');
+  const tableScroll = document.getElementById('tableScroll');
+  const swapLane = document.getElementById('swapLane');
 
-  /* 余白・間隔（10px統一 ） */
-  --gap: 10px;
-  --edge: 10px;
+  // --- ユーティリティ：tbody内tr配列を取得
+  function rows(){
+    return Array.from(tbody.querySelectorAll('tr'));
+  }
 
-  /* 固定帯の高さ */
-  --top-header-h: 60px;  /* 最上段ヘッダー帯 */
-  --toolbar-h: 44px;     /* ツールバー帯 */
+  // --- 行の境界（行間）リストを作成：各ギャップに1つボタン
+  function layoutSwapButtons(){
+    // クリア
+    swapLane.innerHTML = '';
 
-  /* 表幅（全幅 - 98px を維持） */
-  --sheet-offset: 98px;
+    const trs = rows();
+    if(trs.length < 2) return;
 
-  /* 表カラム幅 */
-  --col-section: 1.6fr;  /* 区間 */
-  --col-part:    0.92fr; /* 大胴/中胴/側胴/鉦/笛 */
-  --col-notes:   1.4fr;  /* 備考 */
+    // スクロール領域の可視開始位置（左レーンの原点は上部固定直下）
+    const scrollTop = tableScroll.scrollTop;
 
-  /* 行高 */
-  --h-unit: 36px;                       /* データ行の最小高 */
-  --header-h: calc(var(--h-unit) / 2);  /* 先頭行（表ヘッダー）高さ */
+    // thead の高さ（先頭行固定分）
+    const thead = table.querySelector('thead');
+    const theadRect = thead.getBoundingClientRect();
+    const theadHeight = theadRect.height; // = var(--table-head-row-height)想定
 
-  /* 線の太さ（安定化） */
-  --line: 1px; /* DPRごとに最適化したい場合は末尾のメディアクエリ参照 */
-}
+    // tableScroll のスクロール原点（ビューポート基準 → swap-lane基準へ補正）
+    const scrollRect = tableScroll.getBoundingClientRect();
+    const laneRect = swapLane.getBoundingClientRect();
+    const laneTopInViewport = laneRect.top;
 
-*{ box-sizing: border-box; }
-html,body{ height:100%; }
-body{
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
-  margin:0;
-  color:var(--ink);
-  background:var(--bg);
-}
+    // 各行の位置を測り、行と行の“境界”のYにボタンを置く
+    for(let i=0; i<trs.length - 1; i++){
+      const rowA = trs[i];
+      const rowB = trs[i+1];
+      const aRect = rowA.getBoundingClientRect();
+      const bRect = rowB.getBoundingClientRect();
 
-/* =========================================================
-   固定帯 1: アプリ最上段ヘッダー（タイトル帯）
-   ========================================================= */
-.app-header{
-  position: fixed;
-  top: 0; left:0; right:0;
-  width: 100vw;
-  z-index: 100;
-  background:#fff;
-  border-bottom: none;          /* ← 横線不要 */
-  padding: 10px 16px;           /* 完全10pxにしたい場合は 10px 10px に */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  height: var(--top-header-h);
-}
+      // 行間の中央（ビューポート座標）
+      const gapCenterInViewport = (aRect.bottom + bRect.top) / 2;
 
-/* =========================================================
-   固定帯 2: セクションツールバー（タブ/操作ボタン帯）
-   ─ タイトル中央、左右にボタン群。常に帯の中段に揃う
-   ========================================================= */
-.section-toolbar{
-  position: fixed;
-  top: var(--top-header-h);
-  left: 0; right: 0;
-  z-index: 95;
-  height: var(--toolbar-h);
-  background:#fff;
-  border-bottom: none;          /* ← 横線不要 */
+      // swap-lane の座標系に変換
+      const yInLane = gapCenterInViewport - laneTopInViewport;
 
-  display: grid;
-  grid-template-columns: 1fr auto 1fr; /* 左群 / タイトル / 右群 */
-  align-items: center;                  /* 垂直中央揃え */
-  padding: 0 10px;                      /* 画面端10pxポリシー */
-}
+      // ヘッダー直下のマスクより上に出さない（視覚的にも上に出ない）
+      // swap-lane自体が上部固定直下から始まるため、y<0は見えない。ここでの制限は不要だが保険で。
+      if (yInLane < 0) continue;
 
-/* タイトルは常に視覚的に中央（左右群の幅に影響されない） */
-.sheet-title{
-  grid-column: 2 / 3;
-  justify-self: center;
-  font-size: 28px;
-  font-weight: 700;
-  color:#000;
-  margin:0;
-  white-space: nowrap;
-  text-align:center;
-}
+      const btn = document.createElement('button');
+      btn.className = 'swap-button';
+      btn.type = 'button';
+      btn.textContent = '入替'; // 白黒のみ
+      btn.style.top = Math.round(yInLane - 10) + 'px'; // 高さ20pxの半分=10pxで中央合わせ
 
-/* 左右のボタン群コンテナ */
-.toolbar-left,
-.toolbar-right{
-  display:flex;
-  align-items:center;  /* 帯の中段にボタンが来る */
-  gap: 10px;           /* ボタン間隔は10px統一 */
-  min-width: 0;
-}
-.toolbar-left { grid-column: 1 / 2; justify-self: start; }
-.toolbar-right{ grid-column: 3 / 4; justify-self: end;  }
+      // クリックで i行目と i+1行目 を入替
+      btn.addEventListener('click', () => swapAdjacent(i, i+1));
 
-/* ツールバーのボタン（白黒／1px枠／角丸8／間隔10／押しやすい） */
-.toolbar-btn,
-button.toolbar-btn{
-  -webkit-appearance:none;
-  appearance:none;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap: 6px;            /* アイコンとテキストの間は少し狭め */
-  padding: 8px 10px;   /* 間隔10pxポリシーに従う */
-  min-height: 36px;    /* 必要なら 40～44px に */
-  line-height: 1;
-  font-size: 14px;
-  font-weight: 600;
-  color:#000;
-  background:#fff;
-  border: var(--line) solid #000;
-  border-radius: 8px;
-  cursor:pointer;
-  user-select:none;
-  text-decoration:none;
-}
-.toolbar-btn:hover{ background:#fff; color:#000; border-color:#000; }
-.toolbar-btn:focus-visible{ outline: 2px dotted #000; outline-offset: 2px; }
-.toolbar-btn:active{ transform: translateY(1px); }
+      swapLane.appendChild(btn);
+    }
+  }
 
-/* =========================================================
-   表：先頭行（固定）＋ 追加行（スクロール）
-   ========================================================= */
+  // --- 2行の内容を入替（セル単位でswap）＋ DOMの順序も入替
+  function swapAdjacent(indexA, indexB){
+    const trs = rows();
+    if (indexA < 0 || indexB >= trs.length) return;
 
-/* 先頭行（表ヘッダー） */
-.first-row-table,
-.row-group{
-  display:grid;
-  grid-template-columns:
-    var(--col-section)
-    var(--col-part) var(--col-part) var(--col-part)
-    var(--col-part) var(--col-part)
-    var(--col-notes);
-}
+    const a = trs[indexA];
+    const b = trs[indexB];
 
-.first-row-table{
-  position: fixed;
-  top: calc(var(--top-header-h) + var(--toolbar-h)); /* ← ツールバー直下に固定 */
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 90;
-  background:#fff;
+    // セルのテキストを丸ごとswap（DOMを丸ごと入れ替える前にデータも交換したい場合に有効）
+    const aCells = Array.from(a.children);
+    const bCells = Array.from(b.children);
+    const len = Math.min(aCells.length, bCells.length);
 
-  /* 横幅は全幅 - 98px（既定のポリシーに復帰） */
-  width: calc(100vw - var(--sheet-offset));
+    for(let i=0; i<len; i++){
+      const aHTML = aCells[i].innerHTML;
+      aCells[i].innerHTML = bCells[i].innerHTML;
+      bCells[i].innerHTML = aHTML;
+    }
 
-  /* 表外枠（上・左右）。下はデータ側と連結するので描かない */
-  border-top: var(--line) solid var(--grid);
-  border-left: var(--line) solid var(--grid);
-  border-right: var(--line) solid var(--grid);
-  border-bottom: none;
+    // DOM順序も入替（視覚順序が変わる要件の場合）
+    // 要件により「見た目のみ入替」か「行の順序も入替」か異なることがある。
+    // ここでは順序の入替はしない（内容のみ入替）。
+    // もし物理的に並び順も変えたいなら以下を有効化：
+    // tbody.insertBefore(b, a);
+    // ↑この場合は内容swapは不要なので削除する運用に変更してください。
 
-  margin:0;
-  column-gap:0; row-gap:0;
-}
+    // 再レイアウト
+    requestAnimationFrame(layoutSwapButtons);
+  }
 
-.first-row-table .cell{
-  border-bottom: var(--line) solid var(--grid);
-  padding: 0 10px;
-  min-height: var(--header-h);
-  display:flex; align-items:center; justify-content:center;
-  text-align:center;
-  font-size:15px;
-  color:#000;
-  background:#fff;
-  white-space:nowrap;
-}
-.first-row-table .cell:not(:last-child){
-  border-right: var(--line) solid var(--grid);
-}
+  // --- スクロールやリサイズで再配置
+  tableScroll.addEventListener('scroll', () => {
+    requestAnimationFrame(layoutSwapButtons);
+  });
+  window.addEventListener('resize', () => {
+    requestAnimationFrame(layoutSwapButtons);
+  });
 
-/* 表の塊（.sheet）：基準位置はツールバー＋先頭行の直下 */
-.sheet{
-  /* ツールバー直下に並ぶ先頭行の“下罫線直下”からデータ領域を開始 */
-  margin-top: calc(var(--top-header-h) + var(--toolbar-h));
-  padding-top: calc(var(--header-h) + 1px); /* ← 先頭行下罫線の直下を厳密に起点 */
-  margin-left:auto; margin-right:auto;
-}
+  // --- 初期配置
+  window.addEventListener('load', () => {
+    layoutSwapButtons();
+  });
 
-/* 追加行（スクロール対象） */
-.rows{
-  position:relative;
-  z-index:1;                 /* 先頭行(90)より下＝裏へ隠れる */
-  background:#fff;
-
-  /* rows 側では上オフセットを重ねない（.sheet に集約済み） */
-  padding-top: 0;
-
-  /* 幅は先頭行と完全一致 */
-  width: calc(100vw - var(--sheet-offset));
-  margin: 0 auto;
-
-  /* 左右の外枠（先頭行の左右外枠と繋がる） */
-  border-left: var(--line) solid var(--grid);
-  border-right: var(--line) solid var(--grid);
-
-  /* 内容が溢れたら縦スクロール（先頭行は固定のため含めない） */
-  overflow: visible; /* 表の仕様に合わせる。必要に応じて auto に変更可能 */
-}
-
-.row-group{
-  grid-template-rows: 1fr 1fr;
-  border-bottom: var(--line) solid var(--grid);
-  position:relative;
-  column-gap:0; row-gap:0;
-  background:#fff;
-}
-
-.row-group .cell{
-  border-right: var(--line) solid var(--grid);
-  padding: 10px 10px;
-  font-size: 15px;
-  color:#000;
-  background:#fff;
-
-  display:flex;
-  flex-direction:column;
-  align-items:stretch;
-  justify-content:center;
-
-  min-height: var(--h-unit);
-}
-.row-group .cell:last-of-type{ border-right: none; }
-.row-group .span2{
-  grid-row: 1 / span 2;
-  min-height: calc(var(--h-unit) * 2);
-}
-.cell.split-top{ border-top: var(--line) solid var(--grid); }
-
-/* =========================================================
-   行の外側ボタン（左：入替 / 右：ツール→削除）— 各行の中段
-   ========================================================= */
-.row-group{ position:relative; }
-
-.row-action-btn{
-  position:absolute;
-  top:50%; transform:translateY(-50%);
-  width:34px; height:34px;
-  border: var(--line) solid var(--grid);
-  border-radius: 8px;
-  background:#fff; color:#000;
-  cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  z-index: 2; /* 先頭行(90)より低い → 上に出ない */
-}
-.row-action-btn:hover{ background:#fff; color:#000; border-color:var(--grid); }
-
-/* 左：入替（スワップ） */
-.btn-swap{ left:  calc(-1 * (10px + 34px)); } /* = -44px */
-
-/* 右：ツール → 10px → 削除（外→内） */
-.btn-tool{ right: calc(-1 * (10px + 34px + 10px + 34px)); } /* = -88px */
-.btn-del { right: calc(-1 * (10px + 34px)); }                /* = -44px */
-
-/* 互換（既存クラスをそのまま使っても同位置に出る） */
-.row-tools{ position:absolute; top:50%; transform:translateY(-50%); right: calc(-1 * (10px + 34px + 10px + 34px)); width:34px; height:34px; border: var(--line) solid var(--grid); border-radius:8px; background:#fff; color:#000; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:2; }
-.row-del  { position:absolute; top:50%; transform:translateY(-50%); right: calc(-1 * (10px + 34px)); width:34px; height:34px; border: var(--line) solid var(--grid); border-radius:8px; background:#fff; color:#000; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:2; }
-.row-tools:hover, .row-del:hover{ background:#fff; color:#000; border-color:#000; }
-
-/* =========================================================
-   タブ（必要に応じて）
-   ========================================================= */
-.tabs{ display:flex; gap: 10px; }
-.tab{
-  color:#000; text-decoration:none;
-  border: var(--line) solid var(--grid); border-radius: 8px;
-  padding: 6px 10px; background:#fff;
-}
-.tab[aria-current="page"], .tab.is-active{
-  outline:2px solid #000; outline-offset:2px;
-}
-
-/* =========================================================
-   罫線の見え方安定用（任意）— DPRに応じてヘアライン化
-   ========================================================= */
-/* 標準DPI → 1px のまま */
-:root{ --line: 1px; }
-/* Retina等（DPR>=2） → 0.5px */
-@media (min-resolution: 2dppx){ :root{ --line: 0.5px; } }
-/* 超高DPI（DPR>=3） → およそ 1/3px */
-@media (min-resolution: 3dppx){ :root{ --line: 0.3334px; } }
+  // --- tbodyの変更（行追加/削除）がある場合に備えMutationObserver（任意）
+  const mo = new MutationObserver(() => requestAnimationFrame(layoutSwapButtons));
+  mo.observe(tbody, { childList: true, subtree: false });
+})();
