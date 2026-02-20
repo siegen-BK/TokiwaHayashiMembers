@@ -1,3 +1,42 @@
+:root{
+  /* 色（白黒のみ） */
+  --ink:#000;
+  --grid:#000;
+  --bg:#fff;
+
+  /* 余白・間隔（10px統一） */
+  --gap: 10px;
+  --edge: 10px;
+
+  /* 固定帯の高さ */
+  --top-header-h: 60px;  /* 最上段ヘッダー帯 */
+  --toolbar-h: 44px;     /* ツールバー帯 */
+
+  /* 表幅（全幅 - 98px を維持） */
+  --sheet-offset: 98px;
+
+  /* 表カラム幅 */
+  --col-section: 1.6fr;  /* 区間 */
+  --col-part:    0.92fr; /* 大胴/中胴/側胴/鉦/笛 */
+  --col-notes:   1.4fr;  /* 備考 */
+
+  /* 行高 */
+  --h-unit: 36px;                       /* データ行の最小高 */
+  --header-h: calc(var(--h-unit) / 2);  /* 先頭行（表ヘッダー）高さ */
+
+  /* 線の太さ（安定化） */
+  --line: 1px; /* DPRごとに最適化したい場合は末尾のメディアクエリ参照 */
+}
+
+*{ box-sizing: border-box; }
+html,body{ height:100%; }
+body{
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+  margin:0;
+  color:var(--ink);
+  background:var(--bg);
+}
+
 /* =========================================================
    固定帯 1: アプリ最上段ヘッダー（タイトル帯）
    ========================================================= */
@@ -7,13 +46,13 @@
   width: 100vw;
   z-index: 100;
   background:#fff;
-  border-bottom: 1px solid #000;
-  /* 上下左右の余白は10px基準。ヘッダー帯の見た目はここで完結 */
-  padding: 10px 16px; /* 16pxは視認性確保用。完全10pxにしたい場合は 10px に変更可 */
+  border-bottom: none;          /* ← 横線不要 */
+  padding: 10px 16px;           /* 完全10pxにしたい場合は 10px 10px に */
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
+  height: var(--top-header-h);
 }
 
 /* =========================================================
@@ -22,24 +61,22 @@
    ========================================================= */
 .section-toolbar{
   position: fixed;
-  top: 60px;              /* .app-header の下。必要ならここも変数化可 */
+  top: var(--top-header-h);
   left: 0; right: 0;
   z-index: 95;
-  height: var(--toolbar-h);  /* ← 高さを明示：44px */
+  height: var(--toolbar-h);
   background:#fff;
-  border-bottom: 1px solid #000;
+  border-bottom: none;          /* ← 横線不要 */
 
-  /* タイトル中央：フレックス中央寄せにしつつ左右スペースを確保 */
   display: grid;
   grid-template-columns: 1fr auto 1fr; /* 左群 / タイトル / 右群 */
   align-items: center;                  /* 垂直中央揃え */
-  /* 画面端10pxのポリシーを守る */
-  padding: 0 10px;
+  padding: 0 10px;                      /* 画面端10pxポリシー */
 }
 
 /* タイトルは常に視覚的に中央（左右群の幅に影響されない） */
 .sheet-title{
-  grid-column: 2 / 3;       /* 真ん中カラムに固定 */
+  grid-column: 2 / 3;
   justify-self: center;
   font-size: 28px;
   font-weight: 700;
@@ -53,18 +90,14 @@
 .toolbar-left,
 .toolbar-right{
   display:flex;
-  align-items:center;       /* 帯の中段にボタンが来る */
-  gap: 10px;                /* ボタン間隔は10px統一 */
-  min-width: 0;             /* はみ出し耐性 */
+  align-items:center;  /* 帯の中段にボタンが来る */
+  gap: 10px;           /* ボタン間隔は10px統一 */
+  min-width: 0;
 }
-
-/* 左群は左端寄せ、右群は右端寄せ */
 .toolbar-left { grid-column: 1 / 2; justify-self: start; }
 .toolbar-right{ grid-column: 3 / 4; justify-self: end;  }
 
-/* =========================================================
-   ツールバーのボタン（白黒／1px枠／角丸8／間隔10／押しやすい）
-   ========================================================= */
+/* ツールバーのボタン（白黒／1px枠／角丸8／間隔10／押しやすい） */
 .toolbar-btn,
 button.toolbar-btn{
   -webkit-appearance:none;
@@ -72,22 +105,182 @@ button.toolbar-btn{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  gap: 6px;                 /* アイコンとテキストの間は少し狭め */
-  padding: 8px 10px;        /* 間隔10pxポリシーに従う */
-  min-height: 36px;         /* 必要なら 40～44px に */
+  gap: 6px;            /* アイコンとテキストの間は少し狭め */
+  padding: 8px 10px;   /* 間隔10pxポリシーに従う */
+  min-height: 36px;    /* 必要なら 40～44px に */
   line-height: 1;
   font-size: 14px;
   font-weight: 600;
   color:#000;
   background:#fff;
-  border:1px solid #000;
+  border: var(--line) solid #000;
   border-radius: 8px;
   cursor:pointer;
   user-select:none;
   text-decoration:none;
 }
-
 .toolbar-btn:hover{ background:#fff; color:#000; border-color:#000; }
 .toolbar-btn:focus-visible{ outline: 2px dotted #000; outline-offset: 2px; }
 .toolbar-btn:active{ transform: translateY(1px); }
-``
+
+/* =========================================================
+   表：先頭行（固定）＋ 追加行（スクロール）
+   ========================================================= */
+
+/* 先頭行（表ヘッダー） */
+.first-row-table,
+.row-group{
+  display:grid;
+  grid-template-columns:
+    var(--col-section)
+    var(--col-part) var(--col-part) var(--col-part)
+    var(--col-part) var(--col-part)
+    var(--col-notes);
+}
+
+.first-row-table{
+  position: fixed;
+  top: calc(var(--top-header-h) + var(--toolbar-h)); /* ← ツールバー直下に固定 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  background:#fff;
+
+  /* 横幅は全幅 - 98px（既定のポリシーに復帰） */
+  width: calc(100vw - var(--sheet-offset));
+
+  /* 表外枠（上・左右）。下はデータ側と連結するので描かない */
+  border-top: var(--line) solid var(--grid);
+  border-left: var(--line) solid var(--grid);
+  border-right: var(--line) solid var(--grid);
+  border-bottom: none;
+
+  margin:0;
+  column-gap:0; row-gap:0;
+}
+
+.first-row-table .cell{
+  border-bottom: var(--line) solid var(--grid);
+  padding: 0 10px;
+  min-height: var(--header-h);
+  display:flex; align-items:center; justify-content:center;
+  text-align:center;
+  font-size:15px;
+  color:#000;
+  background:#fff;
+  white-space:nowrap;
+}
+.first-row-table .cell:not(:last-child){
+  border-right: var(--line) solid var(--grid);
+}
+
+/* 表の塊（.sheet）：基準位置はツールバー＋先頭行の直下 */
+.sheet{
+  /* ツールバー直下に並ぶ先頭行の“下罫線直下”からデータ領域を開始 */
+  margin-top: calc(var(--top-header-h) + var(--toolbar-h));
+  padding-top: calc(var(--header-h) + 1px); /* ← 先頭行下罫線の直下を厳密に起点 */
+  margin-left:auto; margin-right:auto;
+}
+
+/* 追加行（スクロール対象） */
+.rows{
+  position:relative;
+  z-index:1;                 /* 先頭行(90)より下＝裏へ隠れる */
+  background:#fff;
+
+  /* rows 側では上オフセットを重ねない（.sheet に集約済み） */
+  padding-top: 0;
+
+  /* 幅は先頭行と完全一致 */
+  width: calc(100vw - var(--sheet-offset));
+  margin: 0 auto;
+
+  /* 左右の外枠（先頭行の左右外枠と繋がる） */
+  border-left: var(--line) solid var(--grid);
+  border-right: var(--line) solid var(--grid);
+
+  /* 内容が溢れたら縦スクロール（先頭行は固定のため含めない） */
+  overflow: visible; /* 表の仕様に合わせる。必要に応じて auto に変更可能 */
+}
+
+.row-group{
+  grid-template-rows: 1fr 1fr;
+  border-bottom: var(--line) solid var(--grid);
+  position:relative;
+  column-gap:0; row-gap:0;
+  background:#fff;
+}
+
+.row-group .cell{
+  border-right: var(--line) solid var(--grid);
+  padding: 10px 10px;
+  font-size: 15px;
+  color:#000;
+  background:#fff;
+
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:center;
+
+  min-height: var(--h-unit);
+}
+.row-group .cell:last-of-type{ border-right: none; }
+.row-group .span2{
+  grid-row: 1 / span 2;
+  min-height: calc(var(--h-unit) * 2);
+}
+.cell.split-top{ border-top: var(--line) solid var(--grid); }
+
+/* =========================================================
+   行の外側ボタン（左：入替 / 右：ツール→削除）— 各行の中段
+   ========================================================= */
+.row-group{ position:relative; }
+
+.row-action-btn{
+  position:absolute;
+  top:50%; transform:translateY(-50%);
+  width:34px; height:34px;
+  border: var(--line) solid var(--grid);
+  border-radius: 8px;
+  background:#fff; color:#000;
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  z-index: 2; /* 先頭行(90)より低い → 上に出ない */
+}
+.row-action-btn:hover{ background:#fff; color:#000; border-color:var(--grid); }
+
+/* 左：入替（スワップ） */
+.btn-swap{ left:  calc(-1 * (10px + 34px)); } /* = -44px */
+
+/* 右：ツール → 10px → 削除（外→内） */
+.btn-tool{ right: calc(-1 * (10px + 34px + 10px + 34px)); } /* = -88px */
+.btn-del { right: calc(-1 * (10px + 34px)); }                /* = -44px */
+
+/* 互換（既存クラスをそのまま使っても同位置に出る） */
+.row-tools{ position:absolute; top:50%; transform:translateY(-50%); right: calc(-1 * (10px + 34px + 10px + 34px)); width:34px; height:34px; border: var(--line) solid var(--grid); border-radius:8px; background:#fff; color:#000; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:2; }
+.row-del  { position:absolute; top:50%; transform:translateY(-50%); right: calc(-1 * (10px + 34px)); width:34px; height:34px; border: var(--line) solid var(--grid); border-radius:8px; background:#fff; color:#000; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:2; }
+.row-tools:hover, .row-del:hover{ background:#fff; color:#000; border-color:#000; }
+
+/* =========================================================
+   タブ（必要に応じて）
+   ========================================================= */
+.tabs{ display:flex; gap: 10px; }
+.tab{
+  color:#000; text-decoration:none;
+  border: var(--line) solid var(--grid); border-radius: 8px;
+  padding: 6px 10px; background:#fff;
+}
+.tab[aria-current="page"], .tab.is-active{
+  outline:2px solid #000; outline-offset:2px;
+}
+
+/* =========================================================
+   罫線の見え方安定用（任意）— DPRに応じてヘアライン化
+   ========================================================= */
+/* 標準DPI → 1px のまま */
+:root{ --line: 1px; }
+/* Retina等（DPR>=2） → 0.5px */
+@media (min-resolution: 2dppx){ :root{ --line: 0.5px; } }
+/* 超高DPI（DPR>=3） → およそ 1/3px */
+@media (min-resolution: 3dppx){ :root{ --line: 0.3334px; } }
