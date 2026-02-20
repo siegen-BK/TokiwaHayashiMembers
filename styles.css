@@ -1,109 +1,110 @@
-(function(){
-  const table = document.getElementById('assignTable');
-  const tbody = document.getElementById('tbody');
-  const tableScroll = document.getElementById('tableScroll');
-  const swapLane = document.getElementById('swapLane');
+/* ===== カラー／寸法（白黒のみ） ===== */
+:root{
+  --black:#000;
+  --white:#fff;
 
-  // --- ユーティリティ：tbody内tr配列を取得
-  function rows(){
-    return Array.from(tbody.querySelectorAll('tr'));
-  }
+  /* 左レーン幅（入替ボタン専用の外側レーン） */
+  --swap-lane-width: 48px;
 
-  // --- 行の境界（行間）リストを作成：各ギャップに1つボタン
-  function layoutSwapButtons(){
-    // クリア
-    swapLane.innerHTML = '';
+  /* 罫線と余白 */
+  --border-w:1px;
+  --cell-px:8px;
+}
 
-    const trs = rows();
-    if(trs.length < 2) return;
+/* ===== ベース ===== */
+*,
+*::before,
+*::after { box-sizing:border-box; }
+html,body{
+  margin:0; padding:0;
+  background:var(--white); color:var(--black);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+}
+img,svg { filter:none; }
 
-    // スクロール領域の可視開始位置（左レーンの原点は上部固定直下）
-    const scrollTop = tableScroll.scrollTop;
+/* ===== スクロール領域（自動でこのクラスが付与されます） =====
+   - テーブルの“左外”にレーンを確保するために padding-left だけ与える
+   - これによりテーブルの列幅や罫線は一切変えない（押し広げない） */
+.assign-scroll{
+  position: relative;
+  background: var(--white);
+  /* 既存の overflow/height は **そのまま**。ここでは上書きしない */
+  padding-left: var(--swap-lane-width);
+}
 
-    // thead の高さ（先頭行固定分）
-    const thead = table.querySelector('thead');
-    const theadRect = thead.getBoundingClientRect();
-    const theadHeight = theadRect.height; // = var(--table-head-row-height)想定
+/* ===== テーブル（自動で .assign-table が付与されます） ===== */
+.assign-table{
+  width:100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: var(--white);
+  color: var(--black);
+}
+.assign-table thead th{
+  position: sticky;
+  top: 0;               /* スクロール領域内で固定 */
+  z-index: 5;           /* 行やボタンより前、マスクより下でOK */
+  background: var(--white);
+  border: var(--border-w) solid var(--black);
+  white-space: nowrap;
+}
+.assign-table tbody td,
+.assign-table tbody th{
+  border: var(--border-w) solid var(--black);
+  padding: var(--cell-px);
+  background: var(--white);
+  color: var(--black);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
 
-    // tableScroll のスクロール原点（ビューポート基準 → swap-lane基準へ補正）
-    const scrollRect = tableScroll.getBoundingClientRect();
-    const laneRect = swapLane.getBoundingClientRect();
-    const laneTopInViewport = laneRect.top;
+/* ===== 左レーン（行間ボタン用） =====
+   - スクリプトが assign-scroll 内に生成
+   - “表の左外”空間（padding-left 部分）にだけ存在し、テーブルには不干渉 */
+.swap-lane{
+  position: absolute;
+  inset: 0 auto 0 0;           /* 左端に貼り付け */
+  width: var(--swap-lane-width);
+  background: var(--white);
+  /* 罫線は付けない（テーブル左罫線と二重線になるのを避ける） */
+  z-index: 2;                  /* 行（デフォ）より上、thead(5)より下で十分 */
+  pointer-events: none;        /* レーン自体はクリックを通す（ボタンは有効化） */
+}
 
-    // 各行の位置を測り、行と行の“境界”のYにボタンを置く
-    for(let i=0; i<trs.length - 1; i++){
-      const rowA = trs[i];
-      const rowB = trs[i+1];
-      const aRect = rowA.getBoundingClientRect();
-      const bRect = rowB.getBoundingClientRect();
+/* ヘッダー直下の空白を自動確保（JSが CSS 変数 --thead-h を設定） */
+.swap-lane-inner{
+  position: absolute;
+  top: var(--thead-h, 0px);
+  left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+}
 
-      // 行間の中央（ビューポート座標）
-      const gapCenterInViewport = (aRect.bottom + bRect.top) / 2;
+/* 個々の入替ボタン（行間1つ） */
+.swap-btn{
+  position: absolute;
+  left: 8px;
+  width: calc(var(--swap-lane-width) - 16px);
+  height: 20px;                /* 行間の中央に置く小ボタン */
+  line-height: 18px;
+  text-align: center;
+  background: var(--white);
+  color: var(--black);
+  border: var(--border-w) solid var(--black);
+  cursor: pointer;
+  user-select: none;
+  pointer-events: auto;        /* ボタンはクリック可能 */
+}
+.swap-btn:active{ transform: scale(0.98); }
 
-      // swap-lane の座標系に変換
-      const yInLane = gapCenterInViewport - laneTopInViewport;
-
-      // ヘッダー直下のマスクより上に出さない（視覚的にも上に出ない）
-      // swap-lane自体が上部固定直下から始まるため、y<0は見えない。ここでの制限は不要だが保険で。
-      if (yInLane < 0) continue;
-
-      const btn = document.createElement('button');
-      btn.className = 'swap-button';
-      btn.type = 'button';
-      btn.textContent = '入替'; // 白黒のみ
-      btn.style.top = Math.round(yInLane - 10) + 'px'; // 高さ20pxの半分=10pxで中央合わせ
-
-      // クリックで i行目と i+1行目 を入替
-      btn.addEventListener('click', () => swapAdjacent(i, i+1));
-
-      swapLane.appendChild(btn);
-    }
-  }
-
-  // --- 2行の内容を入替（セル単位でswap）＋ DOMの順序も入替
-  function swapAdjacent(indexA, indexB){
-    const trs = rows();
-    if (indexA < 0 || indexB >= trs.length) return;
-
-    const a = trs[indexA];
-    const b = trs[indexB];
-
-    // セルのテキストを丸ごとswap（DOMを丸ごと入れ替える前にデータも交換したい場合に有効）
-    const aCells = Array.from(a.children);
-    const bCells = Array.from(b.children);
-    const len = Math.min(aCells.length, bCells.length);
-
-    for(let i=0; i<len; i++){
-      const aHTML = aCells[i].innerHTML;
-      aCells[i].innerHTML = bCells[i].innerHTML;
-      bCells[i].innerHTML = aHTML;
-    }
-
-    // DOM順序も入替（視覚順序が変わる要件の場合）
-    // 要件により「見た目のみ入替」か「行の順序も入替」か異なることがある。
-    // ここでは順序の入替はしない（内容のみ入替）。
-    // もし物理的に並び順も変えたいなら以下を有効化：
-    // tbody.insertBefore(b, a);
-    // ↑この場合は内容swapは不要なので削除する運用に変更してください。
-
-    // 再レイアウト
-    requestAnimationFrame(layoutSwapButtons);
-  }
-
-  // --- スクロールやリサイズで再配置
-  tableScroll.addEventListener('scroll', () => {
-    requestAnimationFrame(layoutSwapButtons);
-  });
-  window.addEventListener('resize', () => {
-    requestAnimationFrame(layoutSwapButtons);
-  });
-
-  // --- 初期配置
-  window.addEventListener('load', () => {
-    layoutSwapButtons();
-  });
-
-  // --- tbodyの変更（行追加/削除）がある場合に備えMutationObserver（任意）
-  const mo = new MutationObserver(() => requestAnimationFrame(layoutSwapButtons));
-  mo.observe(tbody, { childList: true, subtree: false });
-})();
+/* ===== ヘッダーマスク（ヘッダーより上にボタンを絶対に出さない） =====
+   - 視覚的なチラ見えを防ぐ白幕。thead の高さに JS で合わせる */
+.header-mask{
+  position: sticky;
+  top: 0;
+  height: var(--thead-h, 0px);
+  background: var(--white);
+  border-bottom: var(--border-w) solid var(--black);
+  z-index: 6; /* thead(5)より上、ボタン(2)より上 */
+  pointer-events: none;
+}
