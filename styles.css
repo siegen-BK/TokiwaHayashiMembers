@@ -14,3 +14,9 @@ body{
   margin:0;
   font-family:"MSGothic",sans-serif;/*MSゴシックを指定*/
 }
+
+/*＜＜＜ヘッダー設定＞＞＞*/
+.app-header{
+    position:fixed;
+    top:0
+    left
