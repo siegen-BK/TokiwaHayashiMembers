@@ -1,21 +1,25 @@
 :root{
-  --ink:#000;        
-  --grid:#000;       
-  --bg:#fff;         
+  --ink:#000;        /* 文字色（黒） */
+  --grid:#000;       /* 罫線（黒） */
+  --bg:#fff;         /* 背景（白） */
 
-  --col-section: 1.6fr;  
-  --col-part:    0.92fr; 
-  --col-notes:   1.4fr;  
+  --col-section: 1.6fr;   /* 区間 */
+  --col-part:    0.92fr;  /* 役割（大胴～笛） */
+  --col-notes:   1.4fr;   /* 備考 */
 
-  --h-unit: 36px;                      
-  --header-h: calc(var(--h-unit) / 2); 
+  --h-unit: 36px;                       /* データ行の最小高（1段） */
+  --header-h: calc(var(--h-unit) / 2);  /* 先頭行（ヘッダー）高さ */
 
-  --sticky-top-toolbar:   0px;  
-  --sticky-top-tablehead: 0px;  
-  --toolbar-h: 44px;            
+  --sticky-top-toolbar:   0px;
+  --sticky-top-tablehead: 0px;
+  --toolbar-h: 44px;
 }
 
 *{ box-sizing:border-box; }
+
+html,body{
+  height:100%;
+}
 
 body{
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
@@ -25,73 +29,133 @@ body{
 }
 
 /* =========================================================
-   固定帯 1: ヘッダー全幅
+   固定帯 1: 画面最上部のヘッダー（タイトル・タブ置き場想定）
    ========================================================= */
 .app-header{
   position: fixed;
   top: 0;
   left:0;
   right:0;
-  width: 100vw;       
-  z-index: 100;
+  width: 100vw;
+  z-index: 100;               /* 画面内で最前面 */
   background:#fff;
   border-bottom: 1px solid #000;
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 8px;
 }
 
-/* タイトルとボタン配置 */
+/* =========================================================
+   固定帯 2: セクションツールバー（タブ下、表ヘッダー上）
+   ========================================================= */
 .section-toolbar{
   position: fixed;
-  top: 60px;
-  z-index: 90;
-  width: 100%;           /* 全幅 */
-  min-height:44px;
+  top: 60px;                  /* .app-header の下に並ぶ */
+  left: 0;
+  right: 0;
+  z-index: 95;                /* ヘッダーよりは下、表ヘッダーよりは上にしたい場合は80～98で調整 */
+  width: 100%;
+  min-height: var(--toolbar-h);
   background:#fff;
-  border-bottom: none;
+  border-bottom: 1px solid #000;  /* 罫線は黒で統一 */
   display: flex;
   align-items: center;
-  justify-content: center;  /* タイトル中央 */
-  padding: 0 98px;          /* 左右余白確保 */
+  justify-content: center;        /* タイトル中央 */
+  padding: 0 98px;                /* 左右にボタン群分の空き */
 }
 
+/* ツールバー左側ボタン群 */
 .toolbar-left{
   position: absolute;
-  left:0;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
   display:flex;
   gap:8px;
   align-items:center;
 }
 
-/* ボタンデザイン */
+/* =========================================================
+   ボタン（共通：見た目の一貫性 / 白黒のみ / 44pxタップ）
+   ========================================================= */
+button,
 .align-inline button,
-.btn-add{
-  padding:6px 10px;
+.btn-add,
+.btn,
+.tab-btn{
+  -webkit-appearance:none;
+  appearance:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+
+  padding: 8px 12px;              /* iPadでも掴みやすい余白 */
+  min-height: 36px;               /* 目安。必要なら 40～44px に */
+  line-height: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color:#000;
+  background:#fff;
   border:1px solid #000;
-  border-radius:8px;
+  border-radius: 8px;
+
+  cursor:pointer;                 /* ← 修正：pointer */
+  user-select:none;
+  text-decoration:none;
+}
+
+/* ホバー時も色は白黒固定（反転やグレー禁止） */
+button:hover,
+.align-inline button:hover,
+.btn-add:hover,
+.btn:hover,
+.tab-btn:hover{
   background:#fff;
   color:#000;
-  cursor:pointer;
+  border-color:#000;
 }
 
-.align-inline button:hover,
-.btn-add:hover{
-  background:#fff; 
+/* フォーカスリング（黒の点線で最小限） */
+button:focus-visible,
+.align-inline button:focus-visible,
+.btn-add:focus-visible,
+.btn:focus-visible,
+.tab-btn:focus-visible{
+  outline: 2px dotted #000;
+  outline-offset: 2px;
 }
 
-/* タイトル中央 */
+/* クリック時の押し込み表現（色は変えず影のみ） */
+button:active,
+.align-inline button:active,
+.btn-add:active,
+.btn:active,
+.tab-btn:active{
+  transform: translateY(1px);
+}
+
+/* ボタンを横並び配置するためのラッパ（任意） */
+.align-inline{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+/* タイトル（中央固定） */
 .sheet-title{
   font-size:28px;
   font-weight:700;
   color:#000;
   text-align:center;
   margin:0;
+  white-space:nowrap;
 }
 
 /* =========================================================
-   表（Excel風）
+   先頭行（表ヘッダー）
    ========================================================= */
 .first-row-table,
 .row-group{
@@ -113,11 +177,11 @@ body{
   row-gap:0;
 
   position: fixed;
-  top: 104px;
-  z-index: 80;
+  top: 104px;                    /* ツールバーの直下 */
+  z-index: 90;                   /* ツールバー(95)の下、データ行(1)の上 */
   background:#fff;
 
-  max-width: calc(100% - 196px); 
+  max-width: calc(100% - 196px); /* 左右に98pxずつ余白 */
   left: 50%;
   transform: translateX(-50%);
 }
@@ -141,18 +205,22 @@ body{
 }
 
 /* =========================================================
-   データ行
+   データ行（スクロール対象）
    ========================================================= */
 .rows{
   position:relative;
-  z-index:1;
+  z-index:1;                       /* ヘッダー(90)より下なので裏に隠れる */
   border-left: 1px solid #000;
   border-right: 1px solid #000;
   margin-top:0;
 
-  max-width: calc(100% - 196px); 
+  max-width: calc(100% - 196px);
   left: 50%;
   transform: translateX(-50%);
+
+  /* ヘッダーの下罫線直下から白背景を開始するための上マージン */
+  padding-top: calc(var(--header-h) + 1px);  /* 先頭行の下罫線と整合 */
+  background:#fff;
 }
 
 .row-group{
@@ -161,6 +229,7 @@ body{
   position:relative;
   column-gap:0;
   row-gap:0;
+  background:#fff;
 }
 
 .row-group .cell{
@@ -191,7 +260,9 @@ body{
   border-top: 1px solid #000;
 }
 
-/* 右外側ボタン */
+/* =========================================================
+   行の外側ボタン（左右/削除など）— ヘッダーより上に出ない
+   ========================================================= */
 .row-tools,
 .row-del{
   position:absolute;
@@ -203,4 +274,50 @@ body{
   border-radius:8px;
   background:#fff;
   color:#000;
-  cursor:point
+  cursor:pointer;                 /* ← 修正：pointer */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index: 2;                     /* 各行内で前面だが、.first-row-table(90)よりは下 */
+}
+
+.row-tools{ right:-42px; }        /* 表の右外 */
+.row-del  { left:-42px; }         /* 表の左外 */
+
+/* ボタンのアイコン・テキストは黒固定 */
+.row-tools:hover,
+.row-del:hover{
+  background:#fff;
+  color:#000;
+  border-color:#000;
+}
+
+/* =========================================================
+   スクロールのマスキング
+   ========================================================= */
+/* 上部固定レイヤー（ヘッダー/ツールバー/表ヘッダー）の裏に
+   データ行・行外ボタンが必ず隠れるように z-index を調整済み。*/
+
+/* =========================================================
+   タブ (必要であれば)
+   ========================================================= */
+.tabs{
+  display:flex;
+  gap:8px;
+}
+
+.tab{
+  color:#000;
+  text-decoration:none;
+  border:1px solid #000;
+  border-radius:8px;
+  padding:6px 10px;
+  background:#fff;
+}
+
+.tab[aria-current="page"],
+.tab.is-active{
+  outline:2px solid #000; /* 塗り潰しはせず黒強調 */
+  outline-offset:2px;
+}
+``
