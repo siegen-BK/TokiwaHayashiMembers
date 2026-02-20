@@ -28,3 +28,321 @@
 html,body{ height:100%; }
 
 body{
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+  margin:0;
+  color:var(--ink);
+  background:var(--bg);
+}
+
+/* =========================================================
+   固定帯 1: アプリ最上段ヘッダー
+   ========================================================= */
+.app-header{
+  position: fixed;
+  top: 0; left:0; right:0;
+  width: 100vw;
+  z-index: 100;
+  background:#fff;
+  border-bottom: 1px solid var(--grid);
+  padding: calc(var(--gap)) calc(var(--gap) + 6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap);
+}
+
+/* =========================================================
+   固定帯 2: セクションツールバー（タブ/操作ボタン帯）
+   ========================================================= */
+.section-toolbar{
+  position: fixed;
+  top: 60px; /* .app-header の直下（タイトル帯の想定高さ） */
+  left: 0; right: 0;
+  z-index: 95;
+  width: 100%;
+  height: var(--toolbar-h);
+  background:#fff;
+  border-bottom: 1px solid var(--grid);
+  display: flex;
+  align-items: center;         /* 垂直中央揃え（帯高に対して） */
+  justify-content: center;     /* タイトル中央 */
+  padding: 0 calc(var(--edge) + 88px); /* 左右にボタン分の空き＋画面端10px */
+}
+
+/* ツールバー左側ボタン群（通常フレックスで左詰め） */
+.toolbar-left{
+  position: absolute;
+  left: var(--edge);
+  top: 50%;
+  transform: translateY(-50%);
+  display:flex;
+  gap: var(--gap);
+  align-items:center;
+}
+
+/* タイトル（中央固定） */
+.sheet-title{
+  font-size:28px;
+  font-weight:700;
+  color:#000;
+  margin:0;
+  white-space:nowrap;
+  text-align:center;
+}
+
+/* =========================================================
+   ボタン（白黒統一／間隔10px／タップしやすさ）
+   ========================================================= */
+button,
+.align-inline button,
+.btn-add,
+.btn,
+.tab-btn{
+  -webkit-appearance:none;
+  appearance:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap: calc(var(--gap) - 4px); /* アイコンとラベルの間は少し狭め */
+  padding: calc(var(--gap) - 2px) var(--gap);
+  min-height: 36px;            /* 必要なら 40～44px に変更可 */
+  line-height: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color:#000;
+  background:#fff;
+  border:1px solid var(--grid);
+  border-radius: var(--radius);
+  cursor:pointer;
+  user-select:none;
+  text-decoration:none;
+  margin:0; /* 周囲余白はラッパ側で10px制御 */
+}
+
+.align-inline{
+  display:flex;
+  align-items:center;
+  gap: var(--gap);
+}
+
+/* ホバー/フォーカスも白黒固定 */
+button:hover,
+.align-inline button:hover,
+.btn-add:hover,
+.btn:hover,
+.tab-btn:hover{
+  background:#fff;
+  color:#000;
+  border-color:var(--grid);
+}
+button:focus-visible,
+.align-inline button:focus-visible,
+.btn-add:focus-visible,
+.btn:focus-visible,
+.tab-btn:focus-visible{
+  outline: 2px dotted #000;
+  outline-offset: 2px;
+}
+button:active,
+.align-inline button:active,
+.btn-add:active,
+.btn:active,
+.tab-btn:active{
+  transform: translateY(1px);
+}
+
+/* =========================================================
+   表を一つのオブジェクトとして扱う：.sheet で一括センタリング
+   （ヘッダー行とデータ行をまとめた“塊”）
+   ========================================================= */
+.sheet{
+  /* 画面左右端から10pxのマージンで中央寄せ */
+  position: relative;
+  margin-left: var(--edge);
+  margin-right: var(--edge);
+
+  /* ツールバーの直下から“表オブジェクト”が始まる */
+  margin-top: calc(60px + var(--toolbar-h));
+
+  /* 表オブジェクトの左右内側間隔も10px基準にしたい場合は以下を有効化
+     padding-left: var(--gap);
+     padding-right: var(--gap);
+  */
+}
+
+/* =========================================================
+   先頭行（表ヘッダー）
+   ========================================================= */
+.first-row-table,
+.row-group{
+  display:grid;
+  grid-template-columns:
+    var(--col-section)
+    var(--col-part) var(--col-part) var(--col-part)
+    var(--col-part) var(--col-part)
+    var(--col-notes);
+}
+
+.first-row-table{
+  /* 表オブジェクトの中で“固定”だが、位置は .sheet を基準に中央揃え */
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+
+  /* .sheet の左右端に合わせる＝見た目一塊（幅は .sheet と同じ） */
+  width: calc(100vw - (var(--edge) * 2));
+
+  top: calc(60px + var(--toolbar-h)); /* ツールバーの直下 */
+  z-index: 90;
+  background:#fff;
+
+  /* 表外枠（上・左右）— 下はデータ側と連結させるので引かない */
+  border-top: 1px solid var(--grid);
+  border-left: 1px solid var(--grid);
+  border-right: 1px solid var(--grid);
+  border-bottom: none;
+
+  margin:0;
+  column-gap:0;
+  row-gap:0;
+}
+
+.first-row-table .cell{
+  border-bottom: 1px solid var(--grid);
+  padding: 0 var(--gap);
+  min-height: var(--header-h);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-size:15px;
+  color:#000;
+  background:#fff;
+  white-space:nowrap;
+}
+
+.first-row-table .cell:not(:last-child){
+  border-right: 1px solid var(--grid);
+}
+
+/* =========================================================
+   データ行（スクロール対象／表オブジェクト下半分）
+   ========================================================= */
+.rows{
+  position:relative;
+  z-index:1; /* .first-row-table(90) より下＝必ず裏へ回る */
+  background:#fff;
+
+  /* 先頭行の“下罫線の直下”からスタート（1px分を吸収） */
+  padding-top: calc(var(--header-h) + 1px);
+
+  /* 幅は先頭行と一致させ、左右の外枠線も連続させる */
+  width: calc(100vw - (var(--edge) * 2));
+  margin: 0 auto;
+
+  /* データ領域の左右外枠（先頭行の左右外枠と繋がる） */
+  border-left: 1px solid var(--grid);
+  border-right: 1px solid var(--grid);
+}
+
+.row-group{
+  grid-template-rows: 1fr 1fr;
+  border-bottom: 1px solid var(--grid); /* 各行の下罫線（最下行が表下枠） */
+  position:relative;
+  column-gap:0;
+  row-gap:0;
+  background:#fff;
+}
+
+.row-group .cell{
+  border-right: 1px solid var(--grid);
+  padding: calc(var(--gap)) var(--gap);
+  font-size: 15px;
+  color:#000;
+  background:#fff;
+
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:center;
+
+  min-height: var(--h-unit);
+}
+
+.row-group .cell:last-of-type{
+  border-right: none;
+}
+
+.row-group .span2{
+  grid-row: 1 / span 2;
+  min-height: calc(var(--h-unit) * 2);
+}
+
+.cell.split-top{
+  border-top: 1px solid var(--grid);
+}
+
+/* =========================================================
+   行の外側ボタン（左右/削除など）— 先頭行より上に出さない
+   ========================================================= */
+.row-tools,
+.row-del{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  width:34px;
+  height:34px;
+  border:1px solid var(--grid);
+  border-radius: var(--radius);
+  background:#fff;
+  color:#000;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index: 2; /* 行内前面。しかし .first-row-table(90) より十分低い */
+}
+
+/* 表の「外側」に10pxの“間隔”を置いた上で配置 */
+.row-tools{ right: calc(-1 * (var(--gap) + 34px + 0px)); } /* 右外側に10px分空けつつ */
+.row-del  { left:  calc(-1 * (var(--gap) + 34px + 0px)); } /* 左外側に10px分空けつつ */
+
+/* ボタン配色（白黒固定） */
+.row-tools:hover,
+.row-del:hover{
+  background:#fff;
+  color:#000;
+  border-color:var(--grid);
+}
+
+/* =========================================================
+   タブ（必要に応じて）
+   ========================================================= */
+.tabs{
+  display:flex;
+  gap: var(--gap);
+}
+.tab{
+  color:#000;
+  text-decoration:none;
+  border:1px solid var(--grid);
+  border-radius: var(--radius);
+  padding: calc(var(--gap) - 4px) var(--gap);
+  background:#fff;
+}
+.tab[aria-current="page"],
+.tab.is-active{
+  outline:2px solid #000;
+  outline-offset:2px;
+}
+
+/* =========================================================
+   余白ユーティリティ（10px統一基準）
+   ========================================================= */
+.mt-10{ margin-top: var(--gap); }
+.mb-10{ margin-bottom: var(--gap); }
+.ml-10{ margin-left: var(--gap); }
+.mr-10{ margin-right: var(--gap); }
+.p-10{ padding: var(--gap); }
+.px-10{ padding-left: var(--gap); padding-right: var(--gap); }
+.py-10{ padding-top: var(--gap); padding-bottom: var(--gap); }
